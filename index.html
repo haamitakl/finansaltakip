@@ -2320,33 +2320,27 @@ async function _gistTestToken(token){
   }catch{return null;}
 }
 
-// Manuel senkron tetikle
+// Manuel senkron tetikle — timestamp'e bakmadan zorla çeker
 async function _gistSync(){
   if(!_gistEnabled()){_toast('Gist senkron ayarlanmamış','err');return;}
   _showSaveIndicator('☁ Gist\'ten yükleniyor...');
   const obj=await _gistLoad();
-  if(!obj||!obj.cipher){_toast('Gist\'te veri bulunamadı','err');return;}
-  // Yerel veriyle karşılaştır — hangisi daha yeni?
-  const localTs=localStorage.getItem(_DB+'_ts')||'0';
-  const gistTs=obj.ts||'0';
-  if(gistTs>localTs){
-    const dec=await _dec(obj.cipher,_curPw);
-    if(dec){
-      _S2=dec;
-      if(!_S2.profiles)_S2.profiles=['Varsayılan'];
-      if(!_S2.activeProfile)_S2.activeProfile='Varsayılan';
-      if(!_S2.docMeta)_S2.docMeta=[];
-      if(!_S2.budget)_S2.budget=[];
-      if(!_S2.income)_S2.income=[];
-      localStorage.setItem(_DB,obj.cipher);
-      localStorage.setItem(_DB+'_ts',gistTs);
-      _render();
-      _toast('Gist\'ten senkron edildi ✓','ok');
-    } else {
-      _toast('Gist şifresi uyuşmuyor','err');
-    }
+  if(!obj||!obj.cipher){_toast('Gist\'te henüz veri yok','err');return;}
+  const dec=await _dec(obj.cipher,_curPw);
+  if(dec){
+    _S2=dec;
+    if(!_S2.profiles)_S2.profiles=['Varsayılan'];
+    if(!_S2.activeProfile)_S2.activeProfile='Varsayılan';
+    if(!_S2.docMeta)_S2.docMeta=[];
+    if(!_S2.budget)_S2.budget=[];
+    if(!_S2.income)_S2.income=[];
+    localStorage.setItem(_DB,obj.cipher);
+    localStorage.setItem(_DB+'_ts',obj.ts||new Date().toISOString());
+    _render();
+    _closeGistModal();
+    _toast('✅ Gist\'ten veriler yüklendi!','ok');
   } else {
-    _toast('Yerel veri zaten güncel','ok');
+    _toast('⛔ Şifre uyuşmuyor — PC ile aynı şifreyle giriş yapın','err');
   }
 }
 
@@ -3523,12 +3517,53 @@ async function _gistSetup(){
   document.getElementById('_gistId').value=gistId;
   document.getElementById('_gistToken').value='••••••••••••••••••••';
 
-  // İlk kayıt: mevcut veriyi Gist'e gönder
-  const cipher=localStorage.getItem(_DB);
-  if(cipher) await _gistSave(cipher);
-
   _gistRefreshUI();
-  _toast(`✅ Gist senkron aktif! (@${user})`, 'ok');
+
+  // Gist'te veri var mı kontrol et
+  status.textContent='⏳ Gist\'teki veriler kontrol ediliyor...';
+  const existing=await _gistLoad();
+  const localHasData=!!localStorage.getItem(_DB);
+
+  if(existing && existing.cipher){
+    // Gist'te veri var — hangisi daha güncel?
+    const localTs=localStorage.getItem(_DB+'_ts')||'0';
+    const gistTs=existing.ts||'0';
+    if(gistTs>localTs || !localHasData){
+      // Gist daha güncel → çek
+      const dec=await _dec(existing.cipher,_curPw);
+      if(dec){
+        _S2=dec;
+        if(!_S2.profiles)_S2.profiles=['Varsayılan'];
+        if(!_S2.activeProfile)_S2.activeProfile='Varsayılan';
+        if(!_S2.docMeta)_S2.docMeta=[];
+        if(!_S2.budget)_S2.budget=[];
+        if(!_S2.income)_S2.income=[];
+        localStorage.setItem(_DB,existing.cipher);
+        localStorage.setItem(_DB+'_ts',gistTs);
+        _render();
+        status.style.background='#dcfce7';status.style.color='#166534';status.style.border='1px solid #86efac';
+        status.textContent=`✅ Gist senkron aktif! Veriler Gist'ten yüklendi (@${user})`;
+        _toast(`✅ Gist'ten veriler yüklendi!`,'ok');
+      } else {
+        status.style.background='#fef3c7';status.style.color='#92400e';status.style.border='1px solid #fcd34d';
+        status.textContent='⚠ Gist bağlandı fakat şifre uyuşmuyor. Aynı şifreyle giriş yapın.';
+      }
+    } else {
+      // Yerel daha güncel → Gist'e gönder
+      const cipher=localStorage.getItem(_DB);
+      if(cipher) await _gistSave(cipher);
+      status.style.background='#dcfce7';status.style.color='#166534';status.style.border='1px solid #86efac';
+      status.textContent=`✅ Gist senkron aktif! Yerel veriler Gist'e gönderildi (@${user})`;
+      _toast(`✅ Gist senkron aktif! (@${user})`,'ok');
+    }
+  } else {
+    // Gist boş → mevcut yerel veriyi gönder
+    const cipher=localStorage.getItem(_DB);
+    if(cipher) await _gistSave(cipher);
+    status.style.background='#dcfce7';status.style.color='#166534';status.style.border='1px solid #86efac';
+    status.textContent=`✅ Gist senkron aktif! (@${user})`;
+    _toast(`✅ Gist senkron aktif! (@${user})`,'ok');
+  }
 }
 
 async function _gistPushNow(){
