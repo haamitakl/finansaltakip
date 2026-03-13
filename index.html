@@ -1079,6 +1079,10 @@ body._desk-mode * {
       <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 15a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 4.2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 11a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 18.16z"/><path d="M18 2l4 4-4 4M22 6H15"/></svg>
       <span>Taşı</span>
     </button>
+    <button class="_hbtn" id="_gistBtn" onclick="_openGistModal()" title="GitHub Gist Senkron" style="background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.4)">
+      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <span id="_gistBtnTxt">Senkron</span>
+    </button>
     <div class="_ub">
       <div class="_uav" id="_uav" style="background:#2563eb">U</div>
       <span class="_unm" id="_unm">Kullanıcı</span>
@@ -1139,6 +1143,9 @@ body._desk-mode * {
       </button>
       <button onclick="_closeMobileMenu();_openPortableModal()" style="background:#92400e;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">📱</span>Taşı
+      </button>
+      <button onclick="_closeMobileMenu();_openGistModal()" style="background:#166534;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+        <span style="font-size:22px">☁</span>Senkron
       </button>
     </div>
     <button onclick="_doLogout()" style="width:100%;margin-top:12px;background:#7f1d1d;border:none;border-radius:12px;padding:14px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;pointer-events:auto;touch-action:manipulation">
@@ -1233,6 +1240,58 @@ body._desk-mode * {
     <div class="_mac">
       <button class="_btn _bsl" onclick="_closeDbModal()">Kapat</button>
       <button class="_btn _bp" onclick="_saveDbPath()" style="width:auto">Yolu Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- GIST SENKRON MODAL -->
+<div class="_mo" id="_gistModal">
+  <div class="_moc" style="width:500px">
+    <div class="_mot">☁ GitHub Gist Senkron</div>
+    <div class="_mocBody">
+      <div style="background:linear-gradient(135deg,#eff6ff,#dbeafe);border:1px solid #93c5fd;border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1e40af;line-height:1.6">
+        <strong>Nasıl çalışır?</strong><br>
+        Verileriniz şifreli olarak GitHub Gist'e kaydedilir. Tüm cihazlarınız aynı Gist'i kullandığı için otomatik senkron olur.<br>
+        <span style="font-size:11px;color:#3b82f6">Gist özelidir (private), sadece siz görebilirsiniz.</span>
+      </div>
+      <!-- Durum göstergesi -->
+      <div id="_gistStatus" style="display:none;padding:10px 14px;border-radius:8px;margin-bottom:14px;font-size:13px;font-weight:600"></div>
+      <!-- Token girişi -->
+      <div class="_fg">
+        <label class="_fl">GitHub Personal Access Token</label>
+        <input type="password" class="_fi" id="_gistToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+          style="font-family:monospace;font-size:13px">
+        <div style="font-size:11px;color:var(--tl);margin-top:4px">
+          <a href="https://github.com/settings/tokens/new?scopes=gist&description=BorcTakip" target="_blank"
+            style="color:#2563eb;font-weight:600">→ Token oluştur (Gist yetkisi seç)</a>
+        </div>
+      </div>
+      <!-- Gist ID -->
+      <div class="_fg">
+        <label class="_fl">Gist ID <span style="font-weight:400;color:var(--tl)">(boş bırakın — otomatik oluşturulur)</span></label>
+        <input type="text" class="_fi" id="_gistId" placeholder="Otomatik oluşturulacak..."
+          style="font-family:monospace;font-size:13px">
+      </div>
+      <!-- Test / Oluştur butonu -->
+      <button class="_btn _bw _fw" onclick="_gistSetup()" style="margin-top:4px">
+        ☁ Bağlantıyı Test Et &amp; Kur
+      </button>
+      <!-- Aktif ise manuel sync -->
+      <div id="_gistManualSync" style="display:none;margin-top:10px">
+        <div style="height:1px;background:var(--bd);margin:10px 0"></div>
+        <div style="font-size:12px;font-weight:600;color:var(--tm);margin-bottom:8px">Manuel İşlemler</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="_btn" style="background:#0284c7;color:#fff;flex:1" onclick="_gistSync()">⬇ Gist'ten Al</button>
+          <button class="_btn" style="background:#16a34a;color:#fff;flex:1" onclick="_gistPushNow()">⬆ Gist'e Gönder</button>
+        </div>
+        <div style="font-size:11px;color:var(--tl);margin-top:6px">
+          Gist ID: <span id="_gistIdDisplay" style="font-family:monospace;font-weight:600;color:var(--t)"></span>
+        </div>
+      </div>
+    </div>
+    <div class="_mac">
+      <button class="_btn _bsl" onclick="_closeGistModal()">Kapat</button>
+      <button class="_btn _br" onclick="_gistDisable()" id="_gistDisableBtn" style="display:none;width:auto">Senkronu Kapat</button>
     </div>
   </div>
 </div>
@@ -1942,6 +2001,18 @@ async function _loginOk(u,pw){
   if(auth&&auth.hint) document.getElementById('_hintBtn').style.display='block';
   document.getElementById('_hintBtn').style.display='block';
   _mobileInitOnLogin();
+  // Gist buton durumunu güncelle
+  try{
+    const gBtn=document.getElementById('_gistBtn');
+    const gTxt=document.getElementById('_gistBtnTxt');
+    if(gBtn&&gTxt){
+      if(_gistEnabled()){
+        gBtn.style.background='rgba(22,163,74,.25)';
+        gBtn.style.borderColor='rgba(22,163,74,.6)';
+        gTxt.textContent='☁ Aktif';
+      }
+    }
+  }catch{}
   // Portable mod kontrolü: _PDATA bloğunda veri varsa bildir
   try{
     const pd=document.getElementById('_PDATA');
@@ -2143,20 +2214,176 @@ function _pdataRestoreAuth(){
 // File System Access API handle — kullanıcı dosyayı açtığında saklanır
 let _fsHandle=null;
 
+// ═══════════════════════════════════════════════════════
+// GITHUB GIST SENKRON
+// ═══════════════════════════════════════════════════════
+const _GIST_TOKEN_KEY = '_ftk_gist_token';
+const _GIST_ID_KEY    = '_ftk_gist_id';
+const _GIST_FILE      = 'borc-takip-data.json';
+let _gistSyncing = false;
+
+function _gistCfg(){
+  return {
+    token: localStorage.getItem(_GIST_TOKEN_KEY)||'',
+    gistId: localStorage.getItem(_GIST_ID_KEY)||''
+  };
+}
+
+function _gistEnabled(){
+  const c=_gistCfg();
+  return !!(c.token && c.gistId);
+}
+
+// Gist'ten veri çek
+async function _gistLoad(){
+  const {token,gistId}=_gistCfg();
+  if(!token||!gistId) return null;
+  try{
+    const r=await fetch(`https://api.github.com/gists/${gistId}`,{
+      headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return null;
+    const data=await r.json();
+    const file=data.files&&data.files[_GIST_FILE];
+    if(!file) return null;
+    // İçerik truncated ise raw_url'den al
+    const content=file.truncated
+      ? await (await fetch(file.raw_url)).text()
+      : file.content;
+    const obj=JSON.parse(content);
+    return obj; // {cipher, ts}
+  }catch(e){
+    console.warn('Gist yükleme hatası:',e);
+    return null;
+  }
+}
+
+// Gist'e veri kaydet
+async function _gistSave(cipher){
+  const {token,gistId}=_gistCfg();
+  if(!token||!gistId) return false;
+  if(_gistSyncing) return false;
+  _gistSyncing=true;
+  try{
+    const payload=JSON.stringify({cipher, ts:new Date().toISOString()});
+    const r=await fetch(`https://api.github.com/gists/${gistId}`,{
+      method:'PATCH',
+      headers:{
+        Authorization:`token ${token}`,
+        Accept:'application/vnd.github.v3+json',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({files:{[_GIST_FILE]:{content:payload}}})
+    });
+    _gistSyncing=false;
+    return r.ok;
+  }catch(e){
+    _gistSyncing=false;
+    console.warn('Gist kaydetme hatası:',e);
+    return false;
+  }
+}
+
+// Yeni Gist oluştur (ilk kurulum)
+async function _gistCreate(token){
+  try{
+    const r=await fetch('https://api.github.com/gists',{
+      method:'POST',
+      headers:{
+        Authorization:`token ${token}`,
+        Accept:'application/vnd.github.v3+json',
+        'Content-Type':'application/json'
+      },
+      body:JSON.stringify({
+        description:'Borç Takip — Otomatik Senkron',
+        public:false,
+        files:{[_GIST_FILE]:{content:JSON.stringify({cipher:null,ts:new Date().toISOString()})}}
+      })
+    });
+    if(!r.ok) return null;
+    const data=await r.json();
+    return data.id;
+  }catch(e){
+    return null;
+  }
+}
+
+// Gist token doğrula
+async function _gistTestToken(token){
+  try{
+    const r=await fetch('https://api.github.com/user',{
+      headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}
+    });
+    if(!r.ok) return null;
+    const u=await r.json();
+    return u.login; // kullanıcı adı
+  }catch{return null;}
+}
+
+// Manuel senkron tetikle
+async function _gistSync(){
+  if(!_gistEnabled()){_toast('Gist senkron ayarlanmamış','err');return;}
+  _showSaveIndicator('☁ Gist\'ten yükleniyor...');
+  const obj=await _gistLoad();
+  if(!obj||!obj.cipher){_toast('Gist\'te veri bulunamadı','err');return;}
+  // Yerel veriyle karşılaştır — hangisi daha yeni?
+  const localTs=localStorage.getItem(_DB+'_ts')||'0';
+  const gistTs=obj.ts||'0';
+  if(gistTs>localTs){
+    const dec=await _dec(obj.cipher,_curPw);
+    if(dec){
+      _S2=dec;
+      if(!_S2.profiles)_S2.profiles=['Varsayılan'];
+      if(!_S2.activeProfile)_S2.activeProfile='Varsayılan';
+      if(!_S2.docMeta)_S2.docMeta=[];
+      if(!_S2.budget)_S2.budget=[];
+      if(!_S2.income)_S2.income=[];
+      localStorage.setItem(_DB,obj.cipher);
+      localStorage.setItem(_DB+'_ts',gistTs);
+      _render();
+      _toast('Gist\'ten senkron edildi ✓','ok');
+    } else {
+      _toast('Gist şifresi uyuşmuyor','err');
+    }
+  } else {
+    _toast('Yerel veri zaten güncel','ok');
+  }
+}
+
 async function _loadData(){
+  const blank={debts:[],payments:[],income:[],profiles:['Varsayılan'],activeProfile:'Varsayılan',docMeta:[],budget:[]};
+
+  // Gist senkron: Gist'ten yükle (arka planda, sonuçta yerel ile karşılaştır)
+  let gistCipher=null, gistTs='0';
+  if(_gistEnabled()){
+    try{
+      const obj=await _gistLoad();
+      if(obj&&obj.cipher){gistCipher=obj.cipher;gistTs=obj.ts||'0';}
+    }catch{}
+  }
+
   // Öncelik: HTML içindeki _PDATA bloğu (portable mod)
   const pdObj=_pdataGet();
   let raw=pdObj.d||null;
-  // Yoksa localStorage'a bak (eski mod / tarayıcıda çalışırken)
+  let localTs=localStorage.getItem(_DB+'_ts')||'0';
+  // Yoksa localStorage'a bak
   if(!raw) raw=localStorage.getItem(_DB);
 
-  const blank={debts:[],payments:[],income:[],profiles:['Varsayılan'],activeProfile:'Varsayılan',docMeta:[],budget:[]};
-  if(!raw){_S2={...blank};return;}
+  // Gist daha güncelsse onu kullan
+  let finalRaw=raw;
+  if(gistCipher && gistTs>localTs){
+    finalRaw=gistCipher;
+    localStorage.setItem(_DB,gistCipher);
+    localStorage.setItem(_DB+'_ts',gistTs);
+    setTimeout(()=>_showSaveIndicator('☁ Gist\'ten senkron edildi'),500);
+  }
 
-  const dec=await _dec(raw,_curPw);
+  if(!finalRaw){_S2={...blank};return;}
+
+  const dec=await _dec(finalRaw,_curPw);
   if(dec){_S2=dec;}
   else{
-    try{const p=JSON.parse(raw);if(p.debts){_S2=p;await _saveData();}}
+    try{const p=JSON.parse(finalRaw);if(p.debts){_S2=p;await _saveData();}}
     catch{_S2={...blank};}
   }
   if(!_S2.profiles)_S2.profiles=['Varsayılan'];
@@ -2168,8 +2395,10 @@ async function _loadData(){
 
 async function _saveData(){
   const cipher=await _enc(_S2,_curPw);
+  const ts=new Date().toISOString();
   // Her zaman localStorage'a da yaz (hız ve yedek için)
   localStorage.setItem(_DB,cipher);
+  localStorage.setItem(_DB+'_ts',ts);
   // Portable: File System API ile üzerine yaz (varsa)
   if(_fsHandle){
     try{
@@ -2177,14 +2406,17 @@ async function _saveData(){
       await w.write(_buildPortableHTML(cipher, true));
       await w.close();
       _showSaveIndicator('💾 Dosyaya kaydedildi');
-      return;
     }catch(e){
       console.warn('FS yazma hatası:',e);
       _fsHandle=null;
     }
   }
-  // Otomatik File System yoksa sadece localStorage (normal tarayıcı modu)
-  // Kullanıcı manuel "Taşınabilir Kaydet" ile HTML indirebilir
+  // Gist senkron — arka planda (UI bloklamaz)
+  if(_gistEnabled()){
+    _gistSave(cipher).then(ok=>{
+      if(ok) _showSaveIndicator('☁ Gist\'e senkron edildi');
+    });
+  }
 }
 
 // ═══════════════════════════════════════════════════════
@@ -3216,6 +3448,107 @@ function _openDbModal(){
   document.getElementById('_dbModal').classList.add('_ms');
 }
 function _closeDbModal(){document.getElementById('_dbModal').classList.remove('_ms');}
+
+// ── Gist Modal ──────────────────────────────────────────
+function _openGistModal(){
+  const {token,gistId}=_gistCfg();
+  document.getElementById('_gistToken').value=token?'••••••••••••••••••••':'';
+  document.getElementById('_gistId').value=gistId||'';
+  _gistRefreshUI();
+  document.getElementById('_gistModal').classList.add('_ms');
+}
+function _closeGistModal(){document.getElementById('_gistModal').classList.remove('_ms');}
+
+function _gistRefreshUI(){
+  const {token,gistId}=_gistCfg();
+  const active=!!(token&&gistId);
+  const status=document.getElementById('_gistStatus');
+  const manual=document.getElementById('_gistManualSync');
+  const disBtn=document.getElementById('_gistDisableBtn');
+  const idDisp=document.getElementById('_gistIdDisplay');
+  if(active){
+    status.style.display='block';
+    status.style.background='#dcfce7';
+    status.style.color='#166534';
+    status.style.border='1px solid #86efac';
+    status.textContent='✅ Gist senkron aktif — veriler otomatik senkron ediliyor';
+    manual.style.display='block';
+    disBtn.style.display='block';
+    if(idDisp) idDisp.textContent=gistId;
+  } else {
+    status.style.display='none';
+    manual.style.display='none';
+    disBtn.style.display='none';
+  }
+}
+
+async function _gistSetup(){
+  const tokenInput=document.getElementById('_gistToken').value.trim();
+  const gistIdInput=document.getElementById('_gistId').value.trim();
+  const status=document.getElementById('_gistStatus');
+
+  // Token alanı '••••' ise mevcut token'ı koru
+  const token=tokenInput.startsWith('•')?localStorage.getItem(_GIST_TOKEN_KEY):tokenInput;
+  if(!token){
+    status.style.display='block';
+    status.style.background='#fef2f2';status.style.color='#991b1b';status.style.border='1px solid #fca5a5';
+    status.textContent='⛔ Token giriniz';
+    return;
+  }
+  status.style.display='block';
+  status.style.background='#fefce8';status.style.color='#854d0e';status.style.border='1px solid #fde047';
+  status.textContent='⏳ Token doğrulanıyor...';
+
+  const user=await _gistTestToken(token);
+  if(!user){
+    status.style.background='#fef2f2';status.style.color='#991b1b';status.style.border='1px solid #fca5a5';
+    status.textContent='⛔ Token geçersiz. Gist yetkisi olan token oluşturun.';
+    return;
+  }
+
+  let gistId=gistIdInput;
+  if(!gistId){
+    status.textContent=`⏳ @${user} için Gist oluşturuluyor...`;
+    gistId=await _gistCreate(token);
+    if(!gistId){
+      status.style.background='#fef2f2';status.style.color='#991b1b';status.style.border='1px solid #fca5a5';
+      status.textContent='⛔ Gist oluşturulamadı. Token Gist yetkisine sahip mi?';
+      return;
+    }
+  }
+
+  // Kaydet
+  localStorage.setItem(_GIST_TOKEN_KEY,token);
+  localStorage.setItem(_GIST_ID_KEY,gistId);
+  document.getElementById('_gistId').value=gistId;
+  document.getElementById('_gistToken').value='••••••••••••••••••••';
+
+  // İlk kayıt: mevcut veriyi Gist'e gönder
+  const cipher=localStorage.getItem(_DB);
+  if(cipher) await _gistSave(cipher);
+
+  _gistRefreshUI();
+  _toast(`✅ Gist senkron aktif! (@${user})`, 'ok');
+}
+
+async function _gistPushNow(){
+  if(!_gistEnabled()){_toast('Gist ayarlanmamış','err');return;}
+  const cipher=await _enc(_S2,_curPw);
+  localStorage.setItem(_DB,cipher);
+  const ok=await _gistSave(cipher);
+  _toast(ok?'☁ Gist\'e gönderildi':'⛔ Gist hatası', ok?'ok':'err');
+}
+
+function _gistDisable(){
+  _showConfirm('Gist senkronu kapatmak istediğinize emin misiniz? Veriler silinmez.',()=>{
+    localStorage.removeItem(_GIST_TOKEN_KEY);
+    localStorage.removeItem(_GIST_ID_KEY);
+    _gistRefreshUI();
+    _closeGistModal();
+    _toast('Gist senkron kapatıldı','ok');
+  });
+}
+
 async function _saveDbPath(){
   const v=document.getElementById('_dbpi').value.trim();
   if(!v){_toast('Geçerli anahtar girin','err');return;}
@@ -3795,6 +4128,7 @@ window.addEventListener('load',async()=>{
   document.getElementById('_incModal').onclick=e=>{if(e.target===document.getElementById('_incModal'))_closeIncModal();};
   document.getElementById('_docModal').onclick=e=>{if(e.target===document.getElementById('_docModal'))_closeDocModal();};
   document.getElementById('_profModal').onclick=e=>{if(e.target===document.getElementById('_profModal'))_closeProfModal();};
+  document.getElementById('_gistModal').onclick=e=>{if(e.target===document.getElementById('_gistModal'))_closeGistModal();};
 
   // Android klavye açıldığında modal yüksekliğini ayarla (visualViewport API)
   if(window.visualViewport){
@@ -4582,4 +4916,3 @@ function _closePortableModal(){
 </script>
 </body>
 </html>
-
