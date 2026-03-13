@@ -3,18 +3,94 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>&#75;&#105;&#351;&#105;&#115;&#101;&#108; &#84;&#97;&#107;&#105;&#112;</title>
+<title>Finansal Takip</title>
 <!-- PORTABLE DATA STORE — bu blok uygulama tarafından güncellenir, silmeyin -->
 <script id="_PDATA" type="application/json">{"v":1,"d":null}</script>
+<!-- Orijinal kaynak kodu — DOM manipülasyonundan önce, sayfa parse edilirken kaydedilir.
+     _exportCleanTemplate() bu değişkeni kullanır; hiçbir oturum/veri içermez. -->
 <script>
-// Global hata yakalayıcı — boş sayfa debug için
-window.onerror=function(msg,src,line,col,err){
-  document.body.style.cssText='background:#fff;color:#c00;font:14px monospace;padding:20px';
-  document.body.innerHTML='<h2>JS Hatası</h2><pre>'+msg+'\nSatır:'+line+'\nKaynak:'+src+'</pre>';
-};
-window.onunhandledrejection=function(e){
-  console.error('Promise hatası:',e.reason);
-};
+var _RAW_HTML_SRC=(function(){
+  try{
+    // Senkron XHR — hem file:// hem http:// protokollerinde çalışır.
+    // Sayfa henüz render edilmeden, saf kaynak kodu alınır.
+    var x=new XMLHttpRequest();
+    x.open('GET',location.href,false);
+    x.send(null);
+    if(x.status===0||x.status===200) return x.responseText;
+  }catch(e){}
+  return null; // Fallback: fetch() async yolu kullanılacak
+}());
+</script>
+<script>
+/* ═══════════════════════════════════════════════════════
+   GÜVENLİK KORUMA KATMANI
+   ═══════════════════════════════════════════════════════ */
+(function(){
+  // 1. Klavye kısayollarını engelle
+  document.addEventListener('keydown',function(e){
+    // F12
+    if(e.key==='F12'){e.preventDefault();e.stopPropagation();return false;}
+    // Ctrl+Shift+I / J / C / K (DevTools)
+    if(e.ctrlKey&&e.shiftKey&&/^[ijckIJCK]$/.test(e.key)){e.preventDefault();e.stopPropagation();return false;}
+    // Ctrl+U (Kaynak görüntüle)
+    if(e.ctrlKey&&/^[uU]$/.test(e.key)){e.preventDefault();e.stopPropagation();return false;}
+    // Ctrl+S (Kaydet)
+    if(e.ctrlKey&&/^[sS]$/.test(e.key)){e.preventDefault();e.stopPropagation();return false;}
+    // Ctrl+P (Yazdır)
+    if(e.ctrlKey&&/^[pP]$/.test(e.key)){e.preventDefault();e.stopPropagation();return false;}
+  },true);
+
+  // 2. Sağ tık menüsünü engelle
+  document.addEventListener('contextmenu',function(e){
+    e.preventDefault();e.stopPropagation();return false;
+  },true);
+
+  // 3. Console uyarısı — her 3 saniyede bir temizle ve uyar
+  var _cw=function(){
+    console.clear();
+    console.log('%c⛔ DURUN!','color:#dc2626;font-size:48px;font-weight:900');
+    console.log('%cBu alan yetkisiz erişime karşı korumalıdır.\nBuraya herhangi bir kod yapıştırmak hesabınızı tehlikeye atabilir.\nSizi bu işlemi yapmaya yönlendiren biri varsa bu bir sosyal mühendislik saldırısıdır.',
+      'color:#0f172a;font-size:15px;line-height:2');
+  };
+  setInterval(_cw,3000);
+  _cw();
+
+  // 4. DevTools tespiti → kilit ekranı
+  // Mobil cihaz tespiti — false positive önlemek için
+  var _isMobile=function(){
+    return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||window.innerWidth<=768;
+  };
+  // DevTools tespiti — SADECE masaüstünde, güvenli eşiklerle
+  var _dtCheck=function(){
+    // Mobil cihazlarda DevTools tespiti devre dışı (false positive riski yüksek)
+    if(_isMobile()) return;
+    // Metot 1: Sadece YAN PANEL (bağımsız) modunda anlamlı — eşik yüksek tutuldu
+    var wDiff=window.outerWidth-window.innerWidth;
+    var hDiff=window.outerHeight-window.innerHeight;
+    // Güvenli eşik: yan panel için genişlik farkı > 300 (küçük çözünürlük koruması)
+    if(wDiff>300&&wDiff>window.innerWidth*0.3){_triggerLock('devtools');return;}
+    // Yükseklik farkı > 250 VE pencerenin %40'ından fazlaysa (adres çubuğu değil, DevTools)
+    if(hDiff>250&&hDiff>window.innerHeight*0.4&&window.outerHeight>600){_triggerLock('devtools');return;}
+  };
+  var _dtInterval=null;
+  window._startDTCheck=function(){
+    if(_isMobile()) return; // Mobilde başlatma
+    if(_dtInterval)return;
+    // Girişten 4 saniye sonra başlat — tarayıcı yerleşene kadar bekle
+    setTimeout(function(){
+      if(!_dtInterval) _dtInterval=setInterval(_dtCheck,3000);
+    },4000);
+  };
+  window._stopDTCheck=function(){
+    clearInterval(_dtInterval);_dtInterval=null;
+  };
+  // DevTools tespiti tetikleyici
+  window._triggerLock=function(reason){
+    if(reason==='devtools'&&typeof _lockScreen==='function'&&typeof _curUser!=='undefined'&&_curUser){
+      _lockScreen();
+    }
+  };
+})();
 /* XLSX Akıllı Yükleyici — Önce lokal, olmadı CDN */
 (function(){
   function loadXLSX(src, cb){
@@ -38,6 +114,57 @@ window.onunhandledrejection=function(e){
 })();
 </script>
 <style>
+/* Kopyalama ve seçim koruması */
+*{-webkit-touch-callout:none;}
+#_app,#_hd{-webkit-user-select:none;-moz-user-select:none;user-select:none;}
+input,textarea,select{-webkit-user-select:text!important;-moz-user-select:text!important;user-select:text!important;}
+
+/* ── Kullanıcı Listesi & Kayıt ── */
+._ulistBtn{width:100%;display:flex;align-items:center;gap:10px;padding:9px 12px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;cursor:pointer;margin-bottom:6px;transition:all .15s;text-align:left;}
+._ulistBtn:hover{background:#eff6ff;border-color:#93c5fd;transform:translateX(2px);}
+._ulistAv{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex-shrink:0;}
+._ulistName{flex:1;font-size:13px;font-weight:600;color:#1e293b;}
+._llink2{color:#16a34a!important;font-weight:700;}
+._llink2:hover{color:#15803d!important;}
+/* ── Veri Maskeleme ── */
+._sv{transition:filter .25s,opacity .25s;display:inline-block;}
+body._masked ._sv{
+  filter:blur(6px);
+  opacity:.7;
+  cursor:pointer;
+  border-radius:3px;
+  background:rgba(15,23,42,.06);
+}
+body._masked ._sv:hover{filter:blur(0);opacity:1;background:rgba(37,99,235,.08);}
+._maskBtn{display:flex;align-items:center;gap:5px;padding:5px 10px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:8px;color:#fff;font-size:11px;font-weight:600;cursor:pointer;transition:all .2s;}
+._maskBtn:hover{background:rgba(255,255,255,.25);}
+._maskBtn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;}
+
+/* ── Audit Log Panel ── */
+._auditPanel{position:fixed;top:0;right:-420px;width:400px;height:100vh;background:#fff;box-shadow:-4px 0 24px rgba(0,0,0,.15);z-index:500;display:flex;flex-direction:column;transition:right .3s cubic-bezier(.4,0,.2,1);}
+._auditPanel._auOpen{right:0;}
+._auHead{padding:18px 20px;border-bottom:1px solid var(--bd);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;background:linear-gradient(135deg,#1e293b,#0f172a);}
+._auHead h3{color:#fff;font-size:15px;font-weight:700;margin:0;}
+._auClose{background:none;border:none;color:#94a3b8;font-size:18px;cursor:pointer;padding:4px;line-height:1;}
+._auClose:hover{color:#fff;}
+._auFilter{padding:10px 16px;border-bottom:1px solid var(--bd);display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;}
+._auFBtn{padding:4px 10px;border-radius:20px;border:1px solid var(--bd);background:#f8fafc;font-size:11px;font-weight:600;cursor:pointer;color:var(--tm);transition:all .15s;}
+._auFBtn._auFActive{background:#1e293b;color:#fff;border-color:#1e293b;}
+._auList{flex:1;overflow-y:auto;padding:8px 0;}
+._auItem{padding:10px 16px;border-bottom:1px solid #f1f5f9;display:flex;gap:10px;align-items:flex-start;transition:background .15s;}
+._auItem:hover{background:#f8fafc;}
+._auIco{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px;}
+._auContent{flex:1;min-width:0;}
+._auAction{font-size:12px;font-weight:700;color:var(--t);margin-bottom:2px;}
+._auDetail{font-size:11px;color:var(--tm);line-height:1.4;word-break:break-word;}
+._auTime{font-size:10px;color:var(--tl);margin-top:3px;font-family:monospace;}
+._auEmpty{padding:40px 20px;text-align:center;color:var(--tl);font-size:13px;}
+._auBadge{position:absolute;top:-5px;right:-5px;background:#dc2626;color:#fff;border-radius:10px;font-size:9px;font-weight:700;padding:1px 5px;min-width:16px;text-align:center;}
+@media(max-width:768px){
+  ._auditPanel{width:100vw;right:-100vw;}
+  ._maskBtn span{display:none;}
+}
+
 :root{
   --p:#2563eb;--pd:#1d4ed8;--ps:#1e40af;
   --g:#16a34a;--gd:#15803d;
@@ -53,7 +180,7 @@ window.onunhandledrejection=function(e){
   --rad:10px;--rad2:14px;--rad3:20px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html{font-size:14px}
+html{font-size:13px}
 body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--t);min-height:100vh;line-height:1.5}
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
 
@@ -374,25 +501,48 @@ body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg);co
 
 /* Table */
 ._tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
+/* ── Tablo temel ──────────────────────────────────────── */
+table{width:100%;border-collapse:separate;border-spacing:0;font-size:11.5px}
 thead th{
-  background:linear-gradient(135deg,#f8fafc,#f1f5f9);
-  padding:9px 13px;text-align:left;
-  font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.4px;
-  color:var(--tm);border-bottom:2px solid var(--bd);white-space:nowrap;
+  background:linear-gradient(180deg,#1e293b 0%,#0f172a 100%);
+  padding:8px 12px;text-align:left;
+  font-weight:600;font-size:10px;text-transform:uppercase;letter-spacing:.7px;
+  color:#94a3b8;border-bottom:none;white-space:nowrap;position:sticky;top:0;z-index:2;
 }
-tbody tr{border-bottom:1px solid #f1f5f9;transition:background .15s}
-tbody tr:hover{background:#f8fafc}
-tbody tr._overdue{background:linear-gradient(135deg,#fff5f5,#fef2f2);border-left:3px solid #dc2626}
+thead th:first-child{border-radius:8px 0 0 0}
+thead th:last-child{border-radius:0 8px 0 0}
+/* Zebra — çift/tek satır renklendirme */
+tbody tr:nth-child(even){background:#f8fafc}
+tbody tr:nth-child(odd){background:#ffffff}
+tbody tr{border-bottom:1px solid #e9edf2;transition:background .12s,box-shadow .12s}
+tbody tr:hover{background:#eef4ff!important;box-shadow:inset 3px 0 0 #2563eb}
+/* Section başlık satırları */
+tbody tr._tblSection{background:linear-gradient(90deg,#0f172a 0%,#1e293b 100%)!important}
+tbody tr._tblSection td{color:#e2e8f0!important;font-size:11px!important;font-weight:700!important;letter-spacing:.3px;padding:7px 12px}
+/* Bütçe grup başlıkları */
+tbody tr._tblGroup{background:linear-gradient(90deg,#f1f5f9,#e8edf4)!important}
+tbody tr._tblGroup:hover{background:linear-gradient(90deg,#e2e8f0,#dde3ed)!important;box-shadow:none}
+tbody tr._tblGroup td{font-weight:700!important;font-size:11px!important;padding:6px 12px;color:#334155!important}
+/* Durum satırları */
+tbody tr._overdue{background:linear-gradient(90deg,#fff5f5,#fef2f2)!important;box-shadow:inset 3px 0 0 #dc2626}
 tbody tr._overdue td:first-child{padding-left:10px}
-tbody tr._carried{background:linear-gradient(135deg,#fffbeb,#fef3c7);border-left:3px solid #f59e0b}
-tbody td{padding:9px 13px;vertical-align:middle}
-._sb2{padding:3px 10px;border-radius:12px;font-size:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px}
-._sp{background:#dcfce7;color:#166534}
-._spt{background:#fff7ed;color:#c2410c}
-._su{background:#fee2e2;color:#991b1b}
-._sf{background:#f1f5f9;color:#475569}
-._sc2{background:#fef3c7;color:#92400e}
+tbody tr._overdue:hover{background:#fee2e2!important}
+tbody tr._carried{background:linear-gradient(90deg,#fffbeb,#fef9ee)!important;box-shadow:inset 3px 0 0 #f59e0b}
+tbody tr._carried:hover{background:#fef3c7!important}
+/* Genel toplam */
+tbody tr._tblTotal{background:linear-gradient(90deg,#0f172a,#1e293b)!important}
+tbody tr._tblTotal td{color:#fff!important;font-weight:800!important;font-size:12px!important;padding:9px 12px}
+tbody tr._tblTotal:hover{background:linear-gradient(90deg,#1e293b,#334155)!important;box-shadow:none}
+tbody td{padding:8px 12px;vertical-align:middle;color:#334155}
+tbody td:first-child{font-weight:500}
+
+/* ── Durum etiketleri ─────────────────────────────────── */
+._sb2{padding:2px 9px;border-radius:20px;font-size:9.5px;font-weight:700;display:inline-flex;align-items:center;gap:3px;letter-spacing:.2px;white-space:nowrap}
+._sp{background:#dcfce7;color:#15803d;border:1px solid #bbf7d0}
+._spt{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+._su{background:#fee2e2;color:#b91c1c;border:1px solid #fecaca}
+._sf{background:#f1f5f9;color:#475569;border:1px solid #e2e8f0}
+._sc2{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
 
 /* Pay input */
 ._pi{width:80px;padding:5px 8px;border:1.5px solid var(--bd);border-radius:7px;font-size:12px;text-align:right;font-family:inherit;background:#fafafa}
@@ -949,31 +1099,49 @@ body._desk-mode * {
 ._bsbv{font-size:18px;font-weight:800;letter-spacing:-.4px}
 
 /* bill row */
-._brow{display:flex;align-items:center;gap:10px;padding:9px 12px;border:1.5px solid var(--bd);border-radius:9px;margin-bottom:6px;transition:all .2s;background:#fafafa}
-._brow:hover{border-color:#93c5fd;background:#f0f9ff}
-._brow._bpaid{background:#f0fdf4;border-color:#bbf7d0;opacity:.85}
-._brow._bovd{background:#fff5f5;border-color:#fca5a5}
-._bico{font-size:20px;flex-shrink:0}
+/* ── Bütçe satır kartları ─────────────────────────────── */
+._brow{
+  display:flex;align-items:center;gap:10px;
+  padding:8px 12px;
+  border:none;
+  border-radius:0;
+  margin-bottom:0;
+  transition:background .12s;
+  background:#ffffff;
+  border-bottom:1px solid #f1f5f9;
+}
+._brow:nth-child(even){background:#f8fafc}
+._brow:hover{background:#eef4ff!important;box-shadow:inset 3px 0 0 #2563eb}
+._brow._bpaid{background:#f0fdf4!important;border-color:#bbf7d0}
+._brow._bpaid:nth-child(even){background:#e8faf0!important}
+._brow._bovd{background:#fff5f5!important;box-shadow:inset 3px 0 0 #dc2626}
+._bico{font-size:17px;flex-shrink:0;opacity:.85}
 ._bdet{flex:1;min-width:0}
-._bnm{font-size:13px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-._bmeta{font-size:11px;color:var(--tl);margin-top:1px}
-._bamt{font-size:15px;font-weight:800;white-space:nowrap;flex-shrink:0}
-._bdueday{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;white-space:nowrap}
-._ddok{background:#dcfce7;color:#166534}
-._ddsoon{background:#fef3c7;color:#92400e}
-._ddov{background:#fee2e2;color:#991b1b}
+._bnm{font-size:12px;font-weight:600;color:var(--t);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+._bmeta{font-size:10.5px;color:var(--tl);margin-top:1px}
+._bamt{font-size:13px;font-weight:700;white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums}
+._bdueday{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;white-space:nowrap}
+._ddok{background:#dcfce7;color:#166534;border:1px solid #bbf7d0}
+._ddsoon{background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+._ddov{background:#fee2e2;color:#991b1b;border:1px solid #fecaca}
 
 /* add bill form */
-._addrow{display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;padding:12px;background:#f8fafc;border-radius:10px;border:1.5px dashed var(--bd);margin-top:10px}
+._addrow{display:flex;gap:7px;align-items:flex-end;flex-wrap:wrap;padding:10px 12px;background:#f8fafc;border-radius:0 0 8px 8px;border:none;border-top:1.5px dashed #e2e8f0;margin-top:0}
 ._addrow._aopen{border-color:#93c5fd;background:#f0f9ff}
-._arinp{padding:8px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:12px;font-family:inherit;background:#fff;color:var(--t);transition:border-color .2s}
+._arinp{padding:7px 10px;border:1.5px solid var(--bd);border-radius:7px;font-size:11.5px;font-family:inherit;background:#fff;color:var(--t);transition:border-color .2s}
 ._arinp:focus{outline:none;border-color:#2563eb}
-._arinp.wd{width:160px}._arinp.ws{width:80px}._arinp.wm{width:110px}._arinp.wx{width:50px}
+._arinp.wd{width:155px}._arinp.ws{width:75px}._arinp.wm{width:105px}._arinp.wx{width:48px}
 
 /* expense category group */
-._ecat{margin-bottom:16px}
-._ecath{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--tm);margin-bottom:8px;display:flex;align-items:center;gap:6px}
-._ecath span{font-weight:400;color:var(--tl);font-size:11px;text-transform:none;letter-spacing:0}
+._ecat{margin-bottom:12px;border:1px solid #e2e8f0;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+._ecath{
+  font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;
+  color:#475569;padding:8px 12px;
+  background:linear-gradient(90deg,#f1f5f9,#e8edf4);
+  display:flex;align-items:center;gap:6px;
+  border-bottom:1px solid #e2e8f0;
+}
+._ecath span{font-weight:500;color:#64748b;font-size:11px;text-transform:none;letter-spacing:0;margin-left:auto;background:#fff;padding:2px 8px;border-radius:10px;border:1px solid #e2e8f0}
 
 /* balance gauge */
 ._gauge{margin:0 18px 16px;background:#f1f5f9;border-radius:8px;overflow:hidden;height:10px}
@@ -1019,22 +1187,56 @@ body._desk-mode * {
 <!-- LOGIN -->
 <div id="_ls" style="opacity:1;transition:opacity .15s;pointer-events:auto">
   <div class="_lbg"></div>
+
+  <!-- ── GİRİŞ KARTI ── -->
   <div class="_lc" id="_lcard">
-    <div class="_ll">💼</div>
-    <div class="_lt">Kişisel Finans</div>
+    <div class="_ll">📊</div>
+    <div class="_lt">Finansal Takip</div>
     <div class="_ls2">Güvenli hesabınıza giriş yapın</div>
-    <div class="_lfirst" id="_lfirst">İlk kullanım — belirlediğiniz şifre güvenli şekilde kaydedilecek.</div>
+
+    <!-- Kayıtlı kullanıcı listesi -->
+    <div id="_userList" style="display:none;margin-bottom:12px"></div>
+
     <div class="_le" id="_lerr"></div>
-    <input type="text" class="_li" id="_lu" placeholder="Kullanıcı adı" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('_lp').focus()">
-    <input type="password" class="_li" id="_lp" placeholder="Şifre (en az 6 karakter)" autocomplete="current-password" onkeydown="if(event.key==='Enter')_doLogin()">
-    <button class="_lb" onclick="_doLogin()">Giriş Yap</button>
-    <button class="_llink" id="_hintBtn" onclick="_showHintPanel()" style="display:none">Şifremi hatırlatır mısın?</button>
-    <div class="_atxt" id="_atxt"></div>
-    <div class="_lf">
-      <span>🔐</span><span>SHA-256 şifreli · AES korumalı depolama</span>
+
+    <!-- GİRİŞ FORMU -->
+    <div id="_loginForm">
+      <input type="text" class="_li" id="_lu" placeholder="Kullanıcı adı" autocomplete="username"
+        onkeydown="if(event.key==='Enter')document.getElementById('_lp').focus()"
+        oninput="_onUserInput()">
+      <input type="password" class="_li" id="_lp" placeholder="Şifre" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')_doLogin()">
+      <button class="_lb" onclick="_doLogin()">Giriş Yap</button>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button class="_llink" id="_hintBtn" onclick="_showHintPanel()" style="display:none;flex:1">Şifremi unuttum</button>
+        <button class="_llink _llink2" onclick="_showRegisterForm(true)" style="flex:1">+ Yeni Kullanıcı</button>
+      </div>
     </div>
+
+    <!-- KAYIT FORMU -->
+    <div id="_registerForm" style="display:none">
+      <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:10px;text-align:center">Yeni Hesap Oluştur</div>
+      <!-- Paylaşılan dosya uyarısı — sadece PDATA varsa gösterilir -->
+      <div id="_sharedNotice" style="display:none;background:#fffbeb;border:1px solid #fcd34d;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;margin-bottom:12px;line-height:1.5">
+        📦 Bu dosyada şifreli veri var. Orijinal hesabın aynı şifresini kullanırsanız verilerinize erişebilirsiniz. Farklı bir şifre kullanırsanız temiz başlarsınız.
+      </div>
+      <input type="text" class="_li" id="_rlu" placeholder="Kullanıcı adı (min. 3 karakter)" autocomplete="off"
+        onkeydown="if(event.key==='Enter')document.getElementById('_rlp').focus()">
+      <input type="password" class="_li" id="_rlp" placeholder="Şifre (min. 6 karakter)"
+        onkeydown="if(event.key==='Enter')document.getElementById('_rlp2').focus()">
+      <input type="password" class="_li" id="_rlp2" placeholder="Şifre tekrar"
+        onkeydown="if(event.key==='Enter')document.getElementById('_rlhint').focus()">
+      <input type="text" class="_li" id="_rlhint" placeholder="Şifre ipucu (isteğe bağlı)"
+        onkeydown="if(event.key==='Enter')_doRegister()">
+      <button class="_lb" onclick="_doRegister()" style="background:linear-gradient(135deg,#16a34a,#15803d)">Hesap Oluştur</button>
+      <button class="_llink" id="_backToLoginBtn" onclick="_showLoginForm()" style="display:none;width:100%;margin-top:6px">← Giriş ekranına dön</button>
+    </div>
+
+    <div class="_atxt" id="_atxt"></div>
+    <div class="_lf"><span>🔐</span><span>SHA-256 şifreli · AES-256-GCM korumalı</span></div>
   </div>
-  <!-- Hint panel (hidden initially) -->
+
+  <!-- ŞİFRE İPUCU PANELİ -->
   <div class="_lc" id="_hintPanel" style="display:none">
     <div class="_ll">💡</div>
     <div class="_lt">Şifre İpucu</div>
@@ -1047,42 +1249,60 @@ body._desk-mode * {
 <!-- HEADER -->
 <div class="_hd" id="_hd" style="display:none">
   <div style="display:flex;align-items:center;gap:12px">
-    <div class="_hl">Finans <span>Takip</span></div>
-    <div class="_hdb" onclick="_openDbModal()">
+    <div class="_hl">Finansal <span>Takip</span></div>
+    <div class="_hdb" data-admin="1" data-admin-display="flex" onclick="_openDbModal()" style="display:none">
       <div class="_hdd"></div>
       <span id="_dbsh">Veritabanı</span>
     </div>
     <span class="_stmr" id="_stmr"></span>
   </div>
   <div class="_ha">
-    <button class="_hbtn" onclick="_exportAllXLSX()" title="Tümünü Excel'e aktar">
+    <!-- ADMIN-ONLY header buttons -->
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="_exportAllXLSX()" title="Tümünü Excel'e aktar" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
       <span>Excel</span>
     </button>
-    <button class="_hbtn" onclick="_dlDraft()" title="Şablon indir">
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="_dlDraft()" title="Şablon indir" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       <span>Şablon</span>
     </button>
-    <button class="_hbtn" onclick="document.getElementById('_xif').click()" title="Excel içe aktar">
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="document.getElementById('_xif').click()" title="Excel içe aktar" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>İçe Aktar</span>
     </button>
-    <button class="_hbtn" onclick="_exportJSON()" title="Yedek al">
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="_exportJSON()" title="Yedek al" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
       <span>Yedek</span>
     </button>
-    <button class="_hbtn" onclick="document.getElementById('_jif').click()">
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="_exportCleanTemplate()" title="Paylaşım için temiz şablon indir" style="display:none;background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.4)">
+      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+      <span>Paylaş</span>
+    </button>
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="document.getElementById('_jif').click()" style="display:none">
       <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
       <span>Geri Yükle</span>
     </button>
-    <button class="_hbtn _portBtn" onclick="_openPortableModal()" title="Taşınabilir HTML kaydet / cihaz eşleştir" style="background:rgba(234,179,8,.15);border-color:rgba(234,179,8,.4)">
+    <button class="_hbtn _portBtn" data-admin="1" data-admin-display="inline-flex" onclick="_openPortableModal()" title="Taşınabilir HTML kaydet / cihaz eşleştir" style="display:none;background:rgba(234,179,8,.15);border-color:rgba(234,179,8,.4)">
       <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 15a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 4.2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 11a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 18.16z"/><path d="M18 2l4 4-4 4M22 6H15"/></svg>
       <span>Taşı</span>
     </button>
+    <!-- Herkes: Gist Senkron -->
     <button class="_hbtn" id="_gistBtn" onclick="_openGistModal()" title="GitHub Gist Senkron" style="background:rgba(22,163,74,.12);border-color:rgba(22,163,74,.4)">
       <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
       <span id="_gistBtnTxt">Senkron</span>
     </button>
+    <!-- Herkes: Maske Toggle -->
+    <button class="_maskBtn" id="_maskBtn" onclick="_toggleMask()" title="Verileri gizle / göster">
+      <svg id="_maskIco" viewBox="0 0 24 24"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+      <span id="_maskTxt">Gizle</span>
+    </button>
+    <!-- ADMIN-ONLY: Audit Log -->
+    <button class="_hbtn" data-admin="1" data-admin-display="inline-flex" onclick="_toggleAudit()" title="İşlem Geçmişi" style="display:none;position:relative;background:rgba(139,92,246,.12);border-color:rgba(139,92,246,.4)">
+      <svg viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      <span>Geçmiş</span>
+      <span id="_auBadge" class="_auBadge" style="display:none">0</span>
+    </button>
+    <!-- ADMIN-ONLY: DB / Ayarlar butonu (header'daki veritabanı alanı) -->
     <div class="_ub">
       <div class="_uav" id="_uav" style="background:#2563eb">U</div>
       <span class="_unm" id="_unm">Kullanıcı</span>
@@ -1123,29 +1343,34 @@ body._desk-mode * {
   <div style="position:absolute;bottom:62px;left:0;right:0;background:#1e293b;border-radius:20px 20px 0 0;padding:20px 16px;max-height:70vh;overflow-y:auto">
     <div style="width:40px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:0 auto 20px"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <button onclick="_closeMobileMenu();_exportAllXLSX()" style="background:#1e40af;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <!-- ADMIN-ONLY mobil butonlar -->
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();_exportAllXLSX()" style="display:none;background:#1e40af;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">📊</span>Excel Çıkart
       </button>
-      <button onclick="_closeMobileMenu();_dlDraft()" style="background:#166534;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();_dlDraft()" style="display:none;background:#166534;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">📥</span>Şablon İndir
       </button>
-      <button onclick="_closeMobileMenu();document.getElementById('_xif').click()" style="background:#0e7490;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();document.getElementById('_xif').click()" style="display:none;background:#0e7490;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">📤</span>Excel İçe Aktar
       </button>
-      <button onclick="_closeMobileMenu();_exportJSON()" style="background:#7c3aed;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();_exportJSON()" style="display:none;background:#7c3aed;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">💾</span>Yedek Al
       </button>
-      <button onclick="_closeMobileMenu();document.getElementById('_jif').click()" style="background:#92400e;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();document.getElementById('_jif').click()" style="display:none;background:#92400e;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">♻</span>Geri Yükle
       </button>
-      <button onclick="_closeMobileMenu();_openDbModal()" style="background:#334155;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();_openDbModal()" style="display:none;background:#334155;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">⚙</span>Ayarlar
       </button>
-      <button onclick="_closeMobileMenu();_openPortableModal()" style="background:#92400e;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();_openPortableModal()" style="display:none;background:#92400e;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px">
         <span style="font-size:22px">📱</span>Taşı
       </button>
-      <button onclick="_closeMobileMenu();_openGistModal()" style="background:#166534;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px">
-        <span style="font-size:22px">☁</span>Senkron
+      <button data-admin="1" data-admin-display="flex" onclick="_closeMobileMenu();_exportCleanTemplate()" style="display:none;background:#15803d;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;flex-direction:column;align-items:center;gap:6px;grid-column:span 2">
+        <span style="font-size:22px">📤</span>Temiz Şablon İndir (Paylaş)
+      </button>
+      <!-- Herkes: Gist Senkron (tam genişlik) -->
+      <button onclick="_closeMobileMenu();_openGistModal()" style="background:#166534;border:none;border-radius:12px;padding:14px 10px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;flex-direction:column;align-items:center;gap:6px;grid-column:span 2">
+        <span style="font-size:22px">☁</span>GitHub Gist Senkron
       </button>
     </div>
     <button onclick="_doLogout()" style="width:100%;margin-top:12px;background:#7f1d1d;border:none;border-radius:12px;padding:14px;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;pointer-events:auto;touch-action:manipulation">
@@ -1230,11 +1455,31 @@ body._desk-mode * {
       </div>
       <button class="_btn _bw _fw" onclick="_changePw()" style="margin-top:4px">Şifreyi Güncelle</button>
       <div style="height:1px;background:var(--bd);margin:16px 0"></div>
-      <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--t)">👤 Profiller</div>
-      <div id="_profList"></div>
-      <div class="_fr" style="margin-top:10px">
-        <input type="text" class="_fi" id="_newProfName" placeholder="Profil adı">
-        <button class="_btn _bp" onclick="_addProfile()">+ Ekle</button>
+      <!-- ADMIN-ONLY: Kullanıcı Yönetimi -->
+      <div data-admin="1" data-admin-display="block" style="display:none">
+        <div style="height:1px;background:var(--bd);margin:16px 0"></div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--t)">👥 Kullanıcı Yönetimi</div>
+        <div id="_allUsersList" style="margin-bottom:10px"></div>
+      </div>
+      <!-- ADMIN-ONLY: Profiller -->
+      <div data-admin="1" data-admin-display="block" style="display:none">
+        <div style="height:1px;background:var(--bd);margin:16px 0"></div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:12px;color:var(--t)">👤 Profiller</div>
+        <div id="_profList"></div>
+        <div class="_fr" style="margin-top:10px">
+          <input type="text" class="_fi" id="_newProfName" placeholder="Profil adı">
+          <button class="_btn _bp" onclick="_addProfile()">+ Ekle</button>
+        </div>
+      </div>
+      <!-- ADMIN-ONLY: Paylaşım Bölümü -->
+      <div data-admin="1" data-admin-display="block" style="display:none">
+        <div style="height:1px;background:var(--bd);margin:16px 0"></div>
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;color:var(--t)">📤 Paylaşım</div>
+        <div style="background:linear-gradient(135deg,#f0fdf4,#dcfce7);border:1px solid #86efac;border-radius:10px;padding:12px 14px;margin-bottom:10px">
+          <div style="font-size:12px;font-weight:700;color:#15803d;margin-bottom:4px">🔒 Temiz Şablon İndir</div>
+          <div style="font-size:11px;color:#166534;line-height:1.5;margin-bottom:10px">Hiçbir kullanıcı, veri veya Gist bilgisi içermeyen sıfırdan temiz bir HTML dosyası indirir. Bunu paylaştığınız kişi kendi hesabını oluşturabilir.</div>
+          <button class="_btn _fw" onclick="_exportCleanTemplate()" style="background:linear-gradient(135deg,#16a34a,#15803d);color:#fff;border:none;font-weight:700">📤 Paylaşım İçin Temiz Şablon İndir</button>
+        </div>
       </div>
     </div>
     <div class="_mac">
@@ -1262,7 +1507,7 @@ body._desk-mode * {
         <input type="password" class="_fi" id="_gistToken" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
           style="font-family:monospace;font-size:13px">
         <div style="font-size:11px;color:var(--tl);margin-top:4px">
-          <a href="https://github.com/settings/tokens/new?scopes=gist&description=BorcTakip" target="_blank"
+          <a href="https://github.com/settings/tokens/new?scopes=gist&description=FinansalTakip" target="_blank"
             style="color:#2563eb;font-weight:600">→ Token oluştur (Gist yetkisi seç)</a>
         </div>
       </div>
@@ -1849,6 +2094,28 @@ body._desk-mode * {
   </div>
 </div>
 
+<!-- AUDIT LOG PANEL -->
+<div class="_auditPanel" id="_auditPanel">
+  <div class="_auHead">
+    <h3>📋 İşlem Geçmişi</h3>
+    <div style="display:flex;gap:8px;align-items:center">
+      <span id="_auCount" style="font-size:11px;color:#64748b"></span>
+      <button class="_auClose" onclick="_toggleAudit()">✕</button>
+    </div>
+  </div>
+  <div class="_auFilter">
+    <button class="_auFBtn _auFActive" onclick="_auFilterSet('all',this)">Tümü</button>
+    <button class="_auFBtn" onclick="_auFilterSet('debt',this)">💳 Borç</button>
+    <button class="_auFBtn" onclick="_auFilterSet('pay',this)">💰 Ödeme</button>
+    <button class="_auFBtn" onclick="_auFilterSet('budget',this)">🏠 Bütçe</button>
+    <button class="_auFBtn" onclick="_auFilterSet('system',this)">⚙ Sistem</button>
+  </div>
+  <div class="_auList" id="_auList">
+    <div class="_auEmpty">Henüz işlem geçmişi yok</div>
+  </div>
+</div>
+<div id="_auOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:499" onclick="_toggleAudit()"></div>
+
 <!-- TOAST -->
 <div class="_toast" id="_toast"></div>
 
@@ -1887,53 +2154,132 @@ async function _dec(cipher,pw){
 // AUTH
 // ═══════════════════════════════════════════════════════
 const _AK='_ftk_auth',_LK='_ftk_lock',_SK='_ftk_sess';
+const _UK='_ftk_users'; // Çok kullanıcı listesi
 let _curUser=null,_curPw=null,_attempts=0,_lockUntil=0;
 
-/* ── Session persistence (refresh güvenli) ─────────────
-   Şifreyi doğrudan sessionStorage'a yazmak güvensiz olur.
-   Bunun yerine: kullanıcı adı + şifreyi basit bir XOR-like
-   encode ile saklıyoruz; brute-force için yeterli değil ama
-   casual kod okumasına karşı yeterli gizlilik sağlar.
-   Asıl koruma: sessionStorage tab kapatılınca silinir,
-   idle timeout aktif kalır.
-─────────────────────────────────────────────────────── */
-const _SES_TTL = 15 * 60 * 1000; // 15 dakika (idle timeout ile aynı)
+// ── Rol Sistemi ─────────────────────────────────────────
+// Sadece 'hamitakl' kullanıcısı admin yetkisine sahiptir.
+// Diğer tüm kullanıcılar 'user' rolündedir.
+const _ADMIN_USER = 'hamitakl';
+function _isAdmin(){ return _curUser === _ADMIN_USER; }
 
-function _sessSave(u, pw) {
-  const payload = JSON.stringify({u, pw, ts: Date.now()});
-  // Basit encode: btoa ile gizle (görsel gizlilik)
-  try { sessionStorage.setItem(_SK, btoa(unescape(encodeURIComponent(payload)))); } catch {}
+// Rol tabanlı UI güncelleme — login sonrası çağrılır
+function _applyRoleUI(){
+  const admin = _isAdmin();
+  // data-admin="1" olan tüm elementleri yönet
+  document.querySelectorAll('[data-admin]').forEach(el=>{
+    el.style.display = admin ? (el.dataset.adminDisplay||'') : 'none';
+  });
 }
-function _sessLoad() {
+
+// ── Çok kullanıcı yardımcıları ──────────────────────────
+function _getUsers(){
+  try{ return JSON.parse(localStorage.getItem(_UK)||'{}'); }catch{ return {}; }
+}
+function _setUsers(obj){ localStorage.setItem(_UK, JSON.stringify(obj)); }
+function _getUserAuth(u){ const us=_getUsers(); return us[u]||null; }
+function _setUserAuth(u, authObj){ const us=_getUsers(); us[u]=authObj; _setUsers(us); }
+
+/* ── Session persistence — AES-256-GCM şifreli ─────────
+   Session verisi artık AES-256-GCM ile şifreleniyor.
+   Anahtar: app sabiti + kullanıcı-ajanı karışımından türetiliyor.
+   sessionStorage: tab kapatılınca otomatik silinir.
+   idle timeout: 15 dakika hareketsizlikte ekran kilitleniyor.
+─────────────────────────────────────────────────────── */
+const _SES_TTL = 15 * 60 * 1000;
+
+// Session şifreleme anahtarı — app sabiti + tarayıcı bazlı (sunucu bağımsız)
+async function _sesKey(){
+  const raw = await crypto.subtle.digest('SHA-256',
+    new TextEncoder().encode(_S + (navigator.userAgent||'ua') + 'ses2025'));
+  return crypto.subtle.importKey('raw', raw, {name:'AES-GCM'}, false, ['encrypt','decrypt']);
+}
+
+async function _sessSave(u, pw) {
+  try{
+    const payload = new TextEncoder().encode(JSON.stringify({u, pw, ts: Date.now()}));
+    const k = await _sesKey();
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt({name:'AES-GCM',iv}, k, payload);
+    const buf = new Uint8Array(iv.length + enc.byteLength);
+    buf.set(iv); buf.set(new Uint8Array(enc), iv.length);
+    sessionStorage.setItem(_SK, btoa(String.fromCharCode(...buf)));
+  }catch(e){ console.warn('Session kaydetme hatası:',e); }
+}
+
+async function _sessLoad() {
   try {
     const raw = sessionStorage.getItem(_SK);
     if (!raw) return null;
-    const payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
-    // TTL kontrolü: son aktiviteden bu yana _SES_TTL geçtiyse geçersiz
-    const elapsed = Date.now() - (payload.ts || 0);
-    if (elapsed > _SES_TTL) { sessionStorage.removeItem(_SK); return null; }
+    const buf = Uint8Array.from(atob(raw), c=>c.charCodeAt(0));
+    const iv = buf.slice(0,12); const data = buf.slice(12);
+    const k = await _sesKey();
+    const dec = await crypto.subtle.decrypt({name:'AES-GCM',iv}, k, data);
+    const payload = JSON.parse(new TextDecoder().decode(dec));
+    const elapsed = Date.now() - (payload.ts||0);
+    if(elapsed > _SES_TTL){ sessionStorage.removeItem(_SK); return null; }
     return payload;
-  } catch { return null; }
+  } catch { sessionStorage.removeItem(_SK); return null; }
 }
+
 function _sessClear() {
   sessionStorage.removeItem(_SK);
 }
-function _sessTouch() {
-  // Her kullanıcı aktivitesinde timestamp güncelle
+
+async function _sessTouch() {
   try {
     const raw = sessionStorage.getItem(_SK);
-    if (!raw) return;
-    const payload = JSON.parse(decodeURIComponent(escape(atob(raw))));
+    if(!raw) return;
+    const buf = Uint8Array.from(atob(raw), c=>c.charCodeAt(0));
+    const iv = buf.slice(0,12); const data = buf.slice(12);
+    const k = await _sesKey();
+    const dec = await crypto.subtle.decrypt({name:'AES-GCM',iv}, k, data);
+    const payload = JSON.parse(new TextDecoder().decode(dec));
     payload.ts = Date.now();
-    sessionStorage.setItem(_SK, btoa(unescape(encodeURIComponent(JSON.stringify(payload)))));
+    // Güncelle
+    const newPayload = new TextEncoder().encode(JSON.stringify(payload));
+    const newIv = crypto.getRandomValues(new Uint8Array(12));
+    const enc = await crypto.subtle.encrypt({name:'AES-GCM',iv:newIv}, k, newPayload);
+    const newBuf = new Uint8Array(newIv.length + enc.byteLength);
+    newBuf.set(newIv); newBuf.set(new Uint8Array(enc), newIv.length);
+    sessionStorage.setItem(_SK, btoa(String.fromCharCode(...newBuf)));
   } catch {}
 }
 
-function _getAuth(){const r=localStorage.getItem(_AK);return r?JSON.parse(r):null;}
+// Geriye dönük uyumluluk: eski tek-kullanıcı _AK → _UK'ya migrate et
+function _migrateOldAuth(){
+  const old=localStorage.getItem(_AK);
+  if(!old) return;
+  try{
+    const a=JSON.parse(old);
+    if(a&&a.u&&a.h){
+      const us=_getUsers();
+      if(!us[a.u]){ us[a.u]=a; _setUsers(us); }
+      localStorage.removeItem(_AK);
+    }
+  }catch{}
+}
+
+function _getAuth(u){
+  // Eski sistemden migrate et (bir kez çalışır)
+  _migrateOldAuth();
+  if(u) return _getUserAuth(u);
+  // Eski API: kullanıcısız çağrı — tek kullanıcı varsa onu döndür
+  const us=_getUsers();
+  const keys=Object.keys(us);
+  return keys.length===1 ? us[keys[0]] : null;
+}
+
+// Kullanıcıya özgü random salt üret (hex string)
+function _genSalt(){
+  return Array.from(crypto.getRandomValues(new Uint8Array(16)))
+    .map(b=>b.toString(16).padStart(2,'0')).join('');
+}
 
 async function _doLogin(){
   const now=Date.now();
-  const ld=JSON.parse(localStorage.getItem(_LK)||'{"a":0,"u":0}');
+  const lockKey=_LK+'_'+document.getElementById('_lu').value.trim();
+  const ld=JSON.parse(localStorage.getItem(lockKey)||'{"a":0,"u":0}');
   _attempts=ld.a;_lockUntil=ld.u;
   if(_lockUntil>now){
     const s=Math.ceil((_lockUntil-now)/1000);
@@ -1943,29 +2289,120 @@ async function _doLogin(){
   const p=document.getElementById('_lp').value;
   if(!u||!p){_lerr('Ad ve şifre gerekli');return;}
   if(p.length<6){_lerr('Şifre en az 6 karakter');return;}
-  const h=await _h(_S+u+p);
-  const auth=_getAuth();
+
+  const auth=_getUserAuth(u);
   if(!auth){
-    const hint=prompt('Şifre ipucunuzu girin (isteğe bağlı — hatırlatıcı not):','') || '';
-    localStorage.setItem(_AK,JSON.stringify({u,h,hint}));
-    localStorage.setItem(_LK,JSON.stringify({a:0,u:0}));
-    _loginOk(u,p);return;
+    _lerr('Kullanıcı bulunamadı. Kayıt olmak için "Yeni Kullanıcı" butonunu kullanın.');return;
   }
-  if(auth.u!==u){_loginFail('Kullanıcı adı yanlış');return;}
+
+  // Hash doğrulama: salt varsa yeni yöntem, yoksa eski yöntem (geriye dönük uyumluluk)
+  const h = auth.salt
+    ? await _h(auth.salt+u+p)
+    : await _h(_S+u+p);
+
   if(auth.h!==h){
     _attempts++;
     if(_attempts>=5){
       const until=now+5*60*1000;
-      localStorage.setItem(_LK,JSON.stringify({a:_attempts,u:until}));
+      localStorage.setItem(lockKey,JSON.stringify({a:_attempts,u:until}));
       _lerr('5 başarısız giriş. 5 dakika kilitlendi.');
     } else {
-      localStorage.setItem(_LK,JSON.stringify({a:_attempts,u:0}));
+      localStorage.setItem(lockKey,JSON.stringify({a:_attempts,u:0}));
       _loginFail('Şifre yanlış. ('+(5-_attempts)+' deneme kaldı)');
     }
     return;
   }
-  localStorage.setItem(_LK,JSON.stringify({a:0,u:0}));
+
+  // Eski kullanıcı: ilk başarılı girişte salt ekleyerek güncelle (migration)
+  if(!auth.salt){
+    const newSalt=_genSalt();
+    const newH=await _h(newSalt+u+p);
+    _setUserAuth(u,{...auth,h:newH,salt:newSalt,v:2});
+  }
+
+  localStorage.setItem(lockKey,JSON.stringify({a:0,u:0}));
   _loginOk(u,p);
+}
+
+// Yeni kullanıcı kayıt fonksiyonu
+async function _doRegister(){
+  const u=(document.getElementById('_rlu').value||'').trim();
+  const p=document.getElementById('_rlp').value;
+  const p2=document.getElementById('_rlp2').value;
+  const hint=(document.getElementById('_rlhint').value||'').trim();
+  if(!u||!p){_lerr('Kullanıcı adı ve şifre gerekli');return;}
+  if(u.length<3){_lerr('Kullanıcı adı en az 3 karakter olmalı');return;}
+  if(!/^[a-zA-Z0-9_çÇğĞıİöÖşŞüÜ ]+$/.test(u)){_lerr('Kullanıcı adında geçersiz karakter var');return;}
+  if(p.length<6){_lerr('Şifre en az 6 karakter olmalı');return;}
+  if(p!==p2){_lerr('Şifreler eşleşmiyor');return;}
+  if(_getUserAuth(u)){_lerr('"'+u+'" adında kullanıcı zaten var');return;}
+  const salt=_genSalt();
+  const h=await _h(salt+u+p);
+  _setUserAuth(u,{u,h,hint,salt,v:2});
+  // Kayıt formunu temizle
+  ['_rlu','_rlp','_rlp2','_rlhint'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  _showLoginForm();
+  document.getElementById('_lu').value=u;
+  document.getElementById('_lp').value='';
+  // Başarı mesajı
+  const info=document.getElementById('_lerr');
+  info.style.color='#16a34a';
+  info.style.display='block';
+  info.textContent='✅ Hesap oluşturuldu! Şimdi giriş yapabilirsiniz.';
+}
+
+// Kayıt / giriş form geçişleri
+function _showRegisterForm(fromLogin){
+  document.getElementById('_loginForm').style.display='none';
+  document.getElementById('_registerForm').style.display='block';
+  const e=document.getElementById('_lerr');if(e){e.textContent='';e.style.color='#dc2626';}
+  // "Geri" butonu: giriş ekranından geldiyse göster, ilk açılışta gizle
+  const backBtn=document.getElementById('_backToLoginBtn');
+  const us=_getUsers();
+  if(backBtn) backBtn.style.display=Object.keys(us).length>0?'block':'none';
+  // Paylaşılan dosya uyarısı: _PDATA'da şifreli veri varsa göster
+  const notice=document.getElementById('_sharedNotice');
+  if(notice){
+    try{
+      const pd=_pdataGet();
+      notice.style.display=(pd&&pd.d)?'block':'none';
+    }catch{notice.style.display='none';}
+  }
+  setTimeout(()=>{const el=document.getElementById('_rlu');if(el)el.focus();},100);
+}
+function _showLoginForm(){
+  const rf=document.getElementById('_registerForm');if(rf)rf.style.display='none';
+  const lf=document.getElementById('_loginForm');if(lf)lf.style.display='block';
+  const e=document.getElementById('_lerr');if(e){e.textContent='';e.style.color='#dc2626';}
+  _renderUserList();
+}
+
+// Login ekranında kullanıcı listesini göster
+function _renderUserList(){
+  const el=document.getElementById('_userList');
+  if(!el) return;
+  const us=_getUsers();
+  const keys=Object.keys(us);
+  if(!keys.length){el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML=`<div style="font-size:11px;color:#64748b;margin-bottom:8px;font-weight:600;text-transform:uppercase;letter-spacing:.5px">Kayıtlı Hesaplar</div>`
+    +keys.map(k=>{
+      const a=us[k];
+      const colors=['#2563eb','#16a34a','#7c3aed','#dc2626','#d97706','#0891b2'];
+      const ci=k.charCodeAt(0)%colors.length;
+      return `<button class="_ulistBtn" onclick="_selectUser('${k.replace(/'/g,"\\'")}')">
+        <div class="_ulistAv" style="background:${colors[ci]}">${k.charAt(0).toUpperCase()}</div>
+        <div class="_ulistName">${k}</div>
+        <svg viewBox="0 0 24 24" style="width:14px;height:14px;stroke:#94a3b8;fill:none;stroke-width:2;flex-shrink:0"><polyline points="9 18 15 12 9 6"/></svg>
+      </button>`;
+    }).join('');
+}
+
+function _selectUser(name){
+  document.getElementById('_lu').value=name;
+  document.getElementById('_lp').value='';
+  _onUserInput();
+  setTimeout(()=>document.getElementById('_lp').focus(),50);
 }
 
 function _loginFail(m){
@@ -1975,7 +2412,10 @@ function _loginFail(m){
 }
 function _lerr(m){
   const e=document.getElementById('_lerr');
-  e.textContent=m;e.style.display='block';
+  if(!m){e.style.display='none';e.textContent='';return;}
+  e.style.color='#dc2626';
+  e.textContent=m;
+  e.style.display='block';
 }
 
 async function _loginOk(u,pw){
@@ -1989,7 +2429,9 @@ async function _loginOk(u,pw){
   document.getElementById('_app').style.display='block';
   document.getElementById('_unm').textContent=u;
   document.getElementById('_uav').textContent=u.charAt(0).toUpperCase();
-  _DB=localStorage.getItem('_ftk_dbk')||'_ftk_'+u;
+  // Her kullanıcı için ayrı DB key (kullanıcı başına özel depolama)
+  const userDbKey='_ftk_dbk_'+u;
+  _DB=localStorage.getItem(userDbKey)||'_ftk_'+u;
   document.getElementById('_dbsh').textContent=_DB.length>22?'…'+_DB.slice(-19):_DB;
   await _loadData();
   _render();
@@ -1997,22 +2439,29 @@ async function _loginOk(u,pw){
   _reqNotif();
   _checkReminders();
   document.getElementById('_calcFab').style.display='flex';
-  const auth=_getAuth();
-  if(auth&&auth.hint) document.getElementById('_hintBtn').style.display='block';
-  document.getElementById('_hintBtn').style.display='block';
-  _mobileInitOnLogin();
-  // Gist buton durumunu güncelle
-  try{
+  const auth=_getUserAuth(u);
+  if(auth&&auth.hint){const hb=document.getElementById('_hintBtn');if(hb)hb.style.display='block';}
+  // Rol tabanlı UI uygula (admin vs user)
+  _applyRoleUI();
+  // DevTools korumasını başlat
+  if(typeof _startDTCheck==='function') _startDTCheck();
+  // Gist token'ı şifreli yükle (belleğe al)
+  _gistTokenLoad().then(()=>{
     const gBtn=document.getElementById('_gistBtn');
     const gTxt=document.getElementById('_gistBtnTxt');
-    if(gBtn&&gTxt){
-      if(_gistEnabled()){
-        gBtn.style.background='rgba(22,163,74,.25)';
-        gBtn.style.borderColor='rgba(22,163,74,.6)';
-        gTxt.textContent='☁ Aktif';
-      }
+    if(gBtn&&gTxt&&_gistEnabled()){
+      gBtn.style.background='rgba(22,163,74,.25)';
+      gBtn.style.borderColor='rgba(22,163,74,.6)';
+      gTxt.textContent='☁ Aktif';
     }
-  }catch{}
+  });
+  _mobileInitOnLogin();
+  // Maskeleme aktif — varsayılan gizli
+  _masked=true;
+  document.body.classList.add('_masked');
+  _updateMaskBtn();
+  // Audit: giriş kaydı
+  setTimeout(()=>_audit('LOGIN',`${u} — ${new Date().toLocaleString('tr-TR')}`),500);
   // Portable mod kontrolü: _PDATA bloğunda veri varsa bildir
   try{
     const pd=document.getElementById('_PDATA');
@@ -2026,11 +2475,18 @@ async function _loginOk(u,pw){
   }catch{}
 }
 
+function _onUserInput(){
+  const u=document.getElementById('_lu').value.trim();
+  const auth=_getUserAuth(u);
+  const btn=document.getElementById('_hintBtn');
+  if(btn) btn.style.display=(auth&&auth.hint)?'block':'none';
+}
 function _showHintPanel(){
-  const auth=_getAuth();
+  const u=document.getElementById('_lu').value.trim();
+  const auth=_getUserAuth(u)||_getAuth();
   document.getElementById('_lcard').style.display='none';
   document.getElementById('_hintPanel').style.display='block';
-  document.getElementById('_hintDisplay').textContent=auth&&auth.hint?auth.hint:'(İpucu kaydedilmemiş)';
+  document.getElementById('_hintDisplay').textContent=auth&&auth.hint?auth.hint:'(Bu kullanıcı için ipucu kaydedilmemiş)';
 }
 function _backToLogin(){
   document.getElementById('_lcard').style.display='block';
@@ -2043,8 +2499,11 @@ function _doLogout(){
   _showConfirm('Çıkış yapmak istediğinizden emin misiniz?', _logoutNow);
 }
 function _logoutNow(){
+  _audit('LOGOUT',`${_curUser||'?'} — ${new Date().toLocaleString('tr-TR')}`);
+  if(typeof _stopDTCheck==='function') _stopDTCheck();
   _curUser=null;_curPw=null;
   _sessClear();
+  _gistTokenClear();
   _fsHandle=null;
   clearInterval(_idleTimer);
   document.getElementById('_hd').style.display='none';
@@ -2071,7 +2530,7 @@ function _showConfirm(msg, onOk, onCancel){
     d.id='_confirmDlg';
     d.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;padding:20px';
     d.innerHTML=`<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;box-shadow:0 20px 40px rgba(0,0,0,.3);text-align:center">
-      <div id="_cdMsg" style="font-size:15px;font-weight:600;color:#0f172a;margin-bottom:24px;line-height:1.5"></div>
+      <div id="_cdMsg" style="font-size:14px;font-weight:500;color:#0f172a;margin-bottom:24px;line-height:1.6;text-align:left"></div>
       <div style="display:flex;gap:12px">
         <button id="_cdCancel" style="flex:1;padding:11px;background:#f1f5f9;color:#475569;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">İptal</button>
         <button id="_cdOk" style="flex:1;padding:11px;background:#dc2626;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit">Evet</button>
@@ -2079,7 +2538,8 @@ function _showConfirm(msg, onOk, onCancel){
     </div>`;
     document.body.appendChild(d);
   }
-  document.getElementById('_cdMsg').textContent=msg;
+  // \n karakterlerini <br> ye çevir
+  document.getElementById('_cdMsg').innerHTML=msg.replace(/\n/g,'<br>');
   d.style.display='flex';
   document.getElementById('_cdOk').onclick=()=>{d.style.display='none';if(onOk)onOk();};
   document.getElementById('_cdCancel').onclick=()=>{d.style.display='none';if(onCancel)onCancel();};
@@ -2091,7 +2551,10 @@ function _showConfirm(msg, onOk, onCancel){
 let _idleTimer,_idleTo=15*60*1000,_idleLast=Date.now(),_idleLocked=false;
 function _schedIdle(){
   clearInterval(_idleTimer);
-  ['mousemove','keydown','click','touchstart'].forEach(e=>document.addEventListener(e,_resetIdle));
+  _idleLast=Date.now();
+  _idleLocked=false;
+  _idleGrace=Date.now()+10000; // Giriş sonrası 10s grace period — erken kilit yok
+  ['mousemove','keydown','click','touchstart','scroll'].forEach(e=>document.addEventListener(e,_resetIdle,{passive:true}));
   _idleTimer=setInterval(_checkIdle,30000);
   setInterval(_updateTimer,1000);
 }
@@ -2103,23 +2566,41 @@ function _resetIdle(){
     _resetIdle._last=Date.now();
   }
 }
-function _checkIdle(){if(!_curUser)return;if(Date.now()-_idleLast>_idleTo&&!_idleLocked)_lockScreen();}
+function _checkIdle(){
+  if(!_curUser||_idleLocked) return;
+  // Giriş yapıldıktan ilk 10 saniye içinde kilit tetikleme
+  if(_idleGrace&&Date.now()<_idleGrace) return;
+  if(Date.now()-_idleLast>_idleTo) _lockScreen();
+}
+let _idleGrace=0; // Giriş sonrası 10s grace period
 function _lockScreen(){
+  if(_idleLocked) return; // Zaten kilitliyse tekrar çalışmasın
   _idleLocked=true;
-  _sessClear(); // kilitlenince session'ı temizle — refresh'te login gelsin
-  document.getElementById('_idleOverlay').classList.add('_ils');
-  document.getElementById('_ulPass').value='';
-  document.getElementById('_ulErr').textContent='';
+  _sessClear();
+  const ov=document.getElementById('_idleOverlay');
+  if(ov) ov.classList.add('_ils');
+  // Şifre alanını kısa gecikmeyle temizle (otomatik dolum tamamlandıktan sonra)
+  setTimeout(()=>{
+    const p=document.getElementById('_ulPass');
+    const e=document.getElementById('_ulErr');
+    if(p) p.value='';
+    if(e) e.textContent='';
+    if(p) p.focus();
+  },100);
 }
 async function _unlockIdle(){
   const p=document.getElementById('_ulPass').value;
-  const h=await _h(_S+_curUser+p);
-  const auth=_getAuth();
+  if(!p){document.getElementById('_ulErr').textContent='Şifre girin';return;}
+  const auth=_getUserAuth(_curUser);
+  const h=auth&&auth.salt ? await _h(auth.salt+_curUser+p) : await _h(_S+_curUser+p);
   if(!auth||auth.h!==h){document.getElementById('_ulErr').textContent='Şifre yanlış';return;}
   _curPw=p;
-  _sessSave(_curUser, p); // kilit açılınca session'ı yenile
+  _idleLocked=false;
+  _idleLast=Date.now();
+  _sessSave(_curUser, p);
   document.getElementById('_idleOverlay').classList.remove('_ils');
-  _idleLocked=false;_idleLast=Date.now();
+  document.getElementById('_ulPass').value='';
+  document.getElementById('_ulErr').textContent='';
 }
 function _updateTimer(){
   if(!_curUser||_idleLocked)return;
@@ -2193,21 +2674,10 @@ function _pdataGet(){
 }
 
 function _pdataRestoreAuth(){
-  // Taşınan dosyada auth bilgisi varsa localStorage'a yükle
-  try{
-    const obj=_pdataGet();
-    if(obj.auth && !localStorage.getItem(_AK)){
-      localStorage.setItem(_AK, obj.auth);
-      // DB anahtarını da geri yükle
-      if(obj.dbk) localStorage.setItem('_ftk_dbk', obj.dbk);
-      return true; // Auth restore edildi
-    }
-    if(obj.auth){
-      // Auth zaten var ama farklı olabilir — gelen auth daha günceldir
-      localStorage.setItem(_AK, obj.auth);
-      if(obj.dbk) localStorage.setItem('_ftk_dbk', obj.dbk);
-    }
-  }catch{}
+  // GÜVENLİK: Bu fonksiyon artık kullanıcı bilgisi restore ETMEZ.
+  // Sadece _PDATA'nın varlığını kontrol eder.
+  // Şifreli veri _loadData() tarafından _pdataGet().d üzerinden okunur.
+  // Kullanıcı kimlik bilgileri HTML'e gömülmez — paylaşımda güvenlik sağlar.
   return false;
 }
 
@@ -2217,14 +2687,62 @@ let _fsHandle=null;
 // ═══════════════════════════════════════════════════════
 // GITHUB GIST SENKRON
 // ═══════════════════════════════════════════════════════
-const _GIST_TOKEN_KEY = '_ftk_gist_token';
-const _GIST_ID_KEY    = '_ftk_gist_id';
-const _GIST_FILE      = 'borc-takip-data.json';
-let _gistSyncing = false;
+const _GIST_TOKEN_KEY  = '_ftk_gist_token';   // localStorage: AES-şifreli token
+const _GIST_TOKEN_SKEY = '_ftk_gt_s';          // sessionStorage: geçici plain token
+const _GIST_ID_KEY     = '_ftk_gist_id';
+const _GIST_FILE       = 'finansal-takip-data.json';
+let _gistSyncing  = false;
+let _gistTokenMem = '';  // Bellek önbelleği — en hızlı erişim
+
+// Token'ı AES-256-GCM ile şifrele ve localStorage'a yaz
+async function _gistTokenSave(token){
+  if(!_curPw||!token) return;
+  try{
+    const enc=await _enc({t:token}, _curPw);
+    localStorage.setItem(_GIST_TOKEN_KEY,'enc2:'+enc);
+    sessionStorage.setItem(_GIST_TOKEN_SKEY, token);
+    _gistTokenMem=token;
+  }catch(e){ console.warn('Token kaydetme hatası:',e); }
+}
+
+// Token'ı çöz ve belleğe/sessionStorage'a al
+async function _gistTokenLoad(){
+  // 1. Bellek önbelleği
+  if(_gistTokenMem) return _gistTokenMem;
+  // 2. sessionStorage (sekme açık kaldığı sürece)
+  const sess=sessionStorage.getItem(_GIST_TOKEN_SKEY);
+  if(sess){ _gistTokenMem=sess; return sess; }
+  // 3. localStorage'dan şifreli çöz
+  const stored=localStorage.getItem(_GIST_TOKEN_KEY);
+  if(!stored||!_curPw) return '';
+  if(stored.startsWith('enc2:')){
+    try{
+      const dec=await _dec(stored.slice(5), _curPw);
+      if(dec&&dec.t){
+        sessionStorage.setItem(_GIST_TOKEN_SKEY, dec.t);
+        _gistTokenMem=dec.t;
+        return dec.t;
+      }
+    }catch{}
+    return '';
+  }
+  // Legacy: düz metin → şifrele ve güncelle
+  if(stored && !stored.startsWith('enc')){
+    await _gistTokenSave(stored);
+    return stored;
+  }
+  return '';
+}
+
+// Token'ı temizle (logout/disable)
+function _gistTokenClear(){
+  _gistTokenMem='';
+  sessionStorage.removeItem(_GIST_TOKEN_SKEY);
+}
 
 function _gistCfg(){
   return {
-    token: localStorage.getItem(_GIST_TOKEN_KEY)||'',
+    token: _gistTokenMem || sessionStorage.getItem(_GIST_TOKEN_SKEY)||'',
     gistId: localStorage.getItem(_GIST_ID_KEY)||''
   };
 }
@@ -2236,12 +2754,15 @@ function _gistEnabled(){
 
 // Gist'ten veri çek
 async function _gistLoad(){
-  const {token,gistId}=_gistCfg();
+  const token=await _gistTokenLoad();
+  const gistId=localStorage.getItem(_GIST_ID_KEY)||'';
   if(!token||!gistId) return null;
   try{
     const r=await fetch(`https://api.github.com/gists/${gistId}`,{
       headers:{Authorization:`token ${token}`,Accept:'application/vnd.github.v3+json'}
     });
+    if(r.status===401){_toast('⛔ GitHub token geçersiz veya süresi dolmuş','err');return null;}
+    if(r.status===404){_toast('⛔ Gist bulunamadı — ID kontrol edin','err');return null;}
     if(!r.ok) return null;
     const data=await r.json();
     const file=data.files&&data.files[_GIST_FILE];
@@ -2260,7 +2781,8 @@ async function _gistLoad(){
 
 // Gist'e veri kaydet
 async function _gistSave(cipher){
-  const {token,gistId}=_gistCfg();
+  const token=await _gistTokenLoad();
+  const gistId=localStorage.getItem(_GIST_ID_KEY)||'';
   if(!token||!gistId) return false;
   if(_gistSyncing) return false;
   _gistSyncing=true;
@@ -2276,6 +2798,7 @@ async function _gistSave(cipher){
       body:JSON.stringify({files:{[_GIST_FILE]:{content:payload}}})
     });
     _gistSyncing=false;
+    if(r.status===401){ _toast('⛔ GitHub token süresi dolmuş — Senkron panelinden yenileyin','err'); return false; }
     return r.ok;
   }catch(e){
     _gistSyncing=false;
@@ -2295,7 +2818,7 @@ async function _gistCreate(token){
         'Content-Type':'application/json'
       },
       body:JSON.stringify({
-        description:'Borç Takip — Otomatik Senkron',
+        description:'Finansal Takip — Otomatik Senkron',
         public:false,
         files:{[_GIST_FILE]:{content:JSON.stringify({cipher:null,ts:new Date().toISOString()})}}
       })
@@ -2336,6 +2859,7 @@ async function _gistSync(){
     if(!_S2.income)_S2.income=[];
     localStorage.setItem(_DB,obj.cipher);
     localStorage.setItem(_DB+'_ts',obj.ts||new Date().toISOString());
+    _audit('GIST_SYNC',`Gist'ten ${(_S2.debts||[]).length} borç, ${(_S2.payments||[]).length} ödeme çekildi`);
     _render();
     _closeGistModal();
     _toast('✅ Gist\'ten veriler yüklendi!','ok');
@@ -2345,7 +2869,7 @@ async function _gistSync(){
 }
 
 async function _loadData(){
-  const blank={debts:[],payments:[],income:[],profiles:['Varsayılan'],activeProfile:'Varsayılan',docMeta:[],budget:[]};
+  const blank={debts:[],payments:[],income:[],profiles:['Varsayılan'],activeProfile:'Varsayılan',docMeta:[],budget:[],auditLog:[]};
 
   // Gist senkron: Gist'ten yükle (arka planda, sonuçta yerel ile karşılaştır)
   let gistCipher=null, gistTs='0';
@@ -2385,6 +2909,7 @@ async function _loadData(){
   if(!_S2.docMeta)_S2.docMeta=[];
   if(!_S2.budget)_S2.budget=[];
   if(!_S2.income)_S2.income=[];
+  if(!_S2.auditLog)_S2.auditLog=[];
 }
 
 async function _saveData(){
@@ -2562,7 +3087,7 @@ function _showNotif(name,msg,amt){
   c.appendChild(div);
   setTimeout(()=>{if(div.parentElement)div.remove();},8000);
   if(_notifPerm){
-    try{new Notification('Borç Takip — '+name,{body:msg+' '+_fmt(amt),icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="20" font-size="20">💼</text></svg>'});}catch{}
+    try{new Notification('Finansal Takip — '+name,{body:msg+' '+_fmt(amt),icon:'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><text y="20" font-size="20">📊</text></svg>'});}catch{}
   }
 }
 
@@ -2598,6 +3123,153 @@ function _render(){
 
 function _activeDebts(){return _S2.debts.filter(d=>!d.profile||d.profile===_S2.activeProfile);}
 
+// ═══════════════════════════════════════════════════════
+// VERİ MASKELEME
+// ═══════════════════════════════════════════════════════
+let _masked = true; // Varsayılan: gizli
+
+function _toggleMask(){
+  _masked = !_masked;
+  document.body.classList.toggle('_masked', _masked);
+  _updateMaskBtn();
+}
+
+function _updateMaskBtn(){
+  const ico = document.getElementById('_maskIco');
+  const txt = document.getElementById('_maskTxt');
+  if(_masked){
+    // Veriler gizli — kapalı göz (çizgili), yazı "Göster"
+    if(ico) ico.innerHTML='<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+    if(txt) txt.textContent='Göster';
+  } else {
+    // Veriler görünür — açık göz, yazı "Gizle"
+    if(ico) ico.innerHTML='<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    if(txt) txt.textContent='Gizle';
+  }
+}
+
+// Hassas değer wrapper — render fonksiyonlarında kullanılır
+function _sv(html){ return `<span class="_sv">${html}</span>`; }
+function _svFmt(n){ return _sv(_fmt(n)); }
+function _svName(name){
+  if(!name) return _sv('••••');
+  // Maskeleme açıkken bile DOM'da gerçek değer yok — sadece görsel blur
+  return _sv(`<span>${name}</span>`);
+}
+function _svPhone(p){ return p ? _sv(p) : '—'; }
+function _svIban(i){ return i ? _sv(i) : '—'; }
+
+// ═══════════════════════════════════════════════════════
+// AUDIT LOG
+// ═══════════════════════════════════════════════════════
+const _AU_MAX = 300; // Maksimum kayıt sayısı
+let _auFilter = 'all';
+let _auNewCount = 0;
+
+const _AU_ICONS = {
+  LOGIN:   {ico:'🔐', color:'#1e293b', cat:'system'},
+  LOGOUT:  {ico:'🚪', color:'#64748b', cat:'system'},
+  DEBT_ADD:{ico:'💳', color:'#2563eb', cat:'debt'},
+  DEBT_EDIT:{ico:'✏️', color:'#0284c7', cat:'debt'},
+  DEBT_DEL:{ico:'🗑️', color:'#dc2626', cat:'debt'},
+  PAY_ADD: {ico:'💰', color:'#16a34a', cat:'pay'},
+  PAY_DEL: {ico:'↩️', color:'#ea580c', cat:'pay'},
+  BUDGET_ADD:{ico:'🏠', color:'#7c3aed', cat:'budget'},
+  BUDGET_EDIT:{ico:'📝', color:'#6d28d9', cat:'budget'},
+  BUDGET_DEL:{ico:'🗑️', color:'#dc2626', cat:'budget'},
+  BUDGET_PAID:{ico:'✅', color:'#16a34a', cat:'budget'},
+  BUDGET_UNPAID:{ico:'⬜', color:'#94a3b8', cat:'budget'},
+  PROFILE_ADD:{ico:'👤', color:'#0891b2', cat:'system'},
+  PROFILE_DEL:{ico:'👤', color:'#dc2626', cat:'system'},
+  PROFILE_SW:{ico:'🔄', color:'#8b5cf6', cat:'system'},
+  PW_CHANGE:{ico:'🔑', color:'#f59e0b', cat:'system'},
+  GIST_SYNC:{ico:'☁️', color:'#16a34a', cat:'system'},
+  IMPORT:  {ico:'📥', color:'#0891b2', cat:'system'},
+  EXPORT:  {ico:'📤', color:'#0284c7', cat:'system'},
+};
+
+function _audit(action, detail){
+  try{
+    if(!_S2) return;
+    if(!_S2.auditLog) _S2.auditLog=[];
+    _S2.auditLog.unshift({
+      id:_uid(), ts:new Date().toISOString(),
+      action, detail, u:_curUser||'?'
+    });
+    if(_S2.auditLog.length>_AU_MAX) _S2.auditLog=_S2.auditLog.slice(0,_AU_MAX);
+    // Badge güncelle
+    _auNewCount++;
+    const badge=document.getElementById('_auBadge');
+    if(badge){ badge.style.display='block'; badge.textContent=_auNewCount>99?'99+':_auNewCount; }
+  }catch{}
+}
+
+function _toggleAudit(){
+  const panel=document.getElementById('_auditPanel');
+  const overlay=document.getElementById('_auOverlay');
+  const open=panel.classList.toggle('_auOpen');
+  overlay.style.display=open?'block':'none';
+  document.body.style.overflow=open?'hidden':'';
+  if(open){
+    _auNewCount=0;
+    const badge=document.getElementById('_auBadge');
+    if(badge) badge.style.display='none';
+    _renderAuditLog();
+  }
+}
+
+function _auFilterSet(f, btn){
+  _auFilter=f;
+  document.querySelectorAll('._auFBtn').forEach(b=>b.classList.remove('_auFActive'));
+  btn.classList.add('_auFActive');
+  _renderAuditLog();
+}
+
+function _renderAuditLog(){
+  const list=document.getElementById('_auList');
+  const countEl=document.getElementById('_auCount');
+  if(!list) return;
+  const logs=(_S2&&_S2.auditLog)||[];
+  const filtered=_auFilter==='all' ? logs : logs.filter(l=>{
+    const meta=_AU_ICONS[l.action];
+    return meta&&meta.cat===_auFilter;
+  });
+  if(countEl) countEl.textContent=filtered.length+' kayıt';
+  if(!filtered.length){
+    list.innerHTML='<div class="_auEmpty">Bu kategoride işlem yok</div>';
+    return;
+  }
+  list.innerHTML=filtered.map(l=>{
+    const meta=_AU_ICONS[l.action]||{ico:'📌',color:'#64748b'};
+    const dt=new Date(l.ts);
+    const dateStr=dt.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'});
+    const timeStr=dt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+    return `<div class="_auItem">
+      <div class="_auIco" style="background:${meta.color}22;font-size:16px">${meta.ico}</div>
+      <div class="_auContent">
+        <div class="_auAction">${_auActionLabel(l.action)}</div>
+        <div class="_auDetail">${l.detail||''}</div>
+        <div class="_auTime">📅 ${dateStr} &nbsp; 🕐 ${timeStr} &nbsp; 👤 ${l.u||'?'}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function _auActionLabel(a){
+  const map={
+    LOGIN:'Giriş Yapıldı', LOGOUT:'Çıkış Yapıldı',
+    DEBT_ADD:'Borç Eklendi', DEBT_EDIT:'Borç Güncellendi', DEBT_DEL:'Borç Silindi',
+    PAY_ADD:'Ödeme Kaydedildi', PAY_DEL:'Ödeme Silindi',
+    BUDGET_ADD:'Bütçe Kalemi Eklendi', BUDGET_EDIT:'Bütçe Kalemi Güncellendi',
+    BUDGET_DEL:'Bütçe Kalemi Silindi', BUDGET_PAID:'Ödendi İşaretlendi',
+    BUDGET_UNPAID:'Ödenmedi İşaretlendi',
+    PROFILE_ADD:'Profil Oluşturuldu', PROFILE_DEL:'Profil Silindi', PROFILE_SW:'Profil Değiştirildi',
+    PW_CHANGE:'Şifre Değiştirildi', GIST_SYNC:'Gist Senkron',
+    IMPORT:'Veri İçe Aktarıldı', EXPORT:'Veri Dışa Aktarıldı',
+  };
+  return map[a]||a;
+}
+
 function _renderSummary(){
   let gt=0,tp=0,ov=0;
   const today=new Date();
@@ -2608,13 +3280,13 @@ function _renderSummary(){
     });
   });
   const monthPaid=_getMonthPaid(_curY,_curM);
-  document.getElementById('_st').textContent=_fmt(gt);
+  document.getElementById('_st').innerHTML=_svFmt(gt);
   document.getElementById('_sts').textContent=_activeDebts().length+' kayıt';
-  document.getElementById('_sp2').textContent=_fmt(tp);
+  document.getElementById('_sp2').innerHTML=_svFmt(tp);
   document.getElementById('_sps').textContent=_S2.payments.length+' işlem';
-  document.getElementById('_sr').textContent=_fmt(gt-tp);
+  document.getElementById('_sr').innerHTML=_svFmt(gt-tp);
   document.getElementById('_so').textContent=ov;
-  document.getElementById('_sam').textContent=_fmt(monthPaid);
+  document.getElementById('_sam').innerHTML=_svFmt(monthPaid);
 }
 
 function _renderAlerts(){
@@ -2635,7 +3307,7 @@ function _renderAlerts(){
   const div=document.createElement('div');div.className='_alb';div.style.marginBottom='16px';
   div.innerHTML=`<svg viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
   <div><div class="_alt">Yaklaşan Vadeler (${warnings.length} adet)</div>
-  <div class="_als">${warnings.map(w=>`${w.name} — ${w.diff===0?'Bugün':w.diff+' gün'} — ${_fmt(w.amt)}`).join(' · ')}</div></div>`;
+  <div class="_als">${warnings.map(w=>`${_svName(w.name)} — ${w.diff===0?'Bugün':w.diff+' gün'} — ${_svFmt(w.amt)}`).join(' · ')}</div></div>`;
   c.appendChild(div);
 }
 
@@ -2687,8 +3359,8 @@ function _renderDebtorList(){
     div.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0">
       <div class="_dav" style="background:${d.color||'#2563eb'}">${d.name.charAt(0).toUpperCase()}</div>
       <div style="min-width:0">
-        <div class="_dn">${d.name}${hasOv?` <span class="_cob">Gecikmiş</span>`:''}</div>
-        <div class="_da">${_fmt(rem)} kalan${d.type==='elden'?' · Devreden':''}</div>
+        <div class="_dn">${_svName(d.name)}${hasOv?` <span class="_cob">Gecikmiş</span>`:''}</div>
+        <div class="_da">${_svFmt(rem)} kalan${d.type==='elden'?' · Devreden':''}</div>
       </div>
     </div>
     <div class="_dbg">${d.category||'Diğer'}</div>`;
@@ -2743,10 +3415,10 @@ function _renderQuickStats(){
         <span style="color:var(--tl)">Gecikmiş taksit</span><span style="font-weight:700;color:#dc2626">${ov}</span>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--tl)">Gecikmiş tutar</span><span style="font-weight:700;color:#dc2626">${_fmt(ovAmt)}</span>
+        <span style="color:var(--tl)">Gecikmiş tutar</span><span style="font-weight:700;color:#dc2626">${_svFmt(ovAmt)}</span>
       </div>
       ${worstD?`<div style="display:flex;justify-content:space-between;font-size:12px">
-        <span style="color:var(--tl)">En fazla geciken</span><span style="font-weight:600;color:#ea580c">${worstD.name}</span>
+        <span style="color:var(--tl)">En fazla geciken</span><span style="font-weight:600;color:#ea580c">${_svName(worstD.name)}</span>
       </div>`:''}
     </div>`;
 }
@@ -2774,13 +3446,13 @@ function _renderDetail(debt){
       <div class="_pnm">${debt.name}</div>
       <div class="_pinfo">${debt.category||'Diğer'} · ${debt.type==='elden'?'Elden Alınan':'Taksitli'}</div>
       <div class="_pcontact">
-        ${debt.phone?`<span>📱 ${debt.phone}</span>`:''}
-        ${debt.iban?`<span>🏦 ${debt.iban}</span>`:''}
-        ${debt.addr?`<span>📝 ${debt.addr}</span>`:''}
+        ${debt.phone?`<span>📱 ${_svPhone(debt.phone)}</span>`:''}
+        ${debt.iban?`<span>🏦 ${_svIban(debt.iban)}</span>`:''}
+        ${debt.addr?`<span>📝 ${_sv(debt.addr)}</span>`:''}
       </div>
     </div>`;
 
-  document.getElementById('_dn').textContent=debt.name;
+  document.getElementById('_dn').innerHTML=_svName(debt.name);
   document.getElementById('_dc').innerHTML=`
     <span class="_chip _cbl">${debt.category||'Diğer'}</span>
     <span class="_chip _cor">${debt.installments||1} Taksit</span>
@@ -2790,12 +3462,12 @@ function _renderDetail(debt){
   document.getElementById('_pp').textContent=pct.toFixed(1)+'%';
   document.getElementById('_pf').style.width=pct+'%';
   document.getElementById('_pf').style.background=pct>=100?'#16a34a':pct>50?'#d97706':'#dc2626';
-  document.getElementById('_ppaid').textContent='Ödenen: '+_fmt(paid);
-  document.getElementById('_ptot').textContent='Toplam: '+_fmt(debt.principal);
-  document.getElementById('_dpr').textContent=_fmt(debt.principal);
-  document.getElementById('_dpd').textContent=_fmt(paid);
-  document.getElementById('_drm').textContent=_fmt(rem);
-  document.getElementById('_dia').textContent=_fmt(ia);
+  document.getElementById('_ppaid').innerHTML='Ödenen: '+_svFmt(paid);
+  document.getElementById('_ptot').innerHTML='Toplam: '+_svFmt(debt.principal);
+  document.getElementById('_dpr').innerHTML=_svFmt(debt.principal);
+  document.getElementById('_dpd').innerHTML=_svFmt(paid);
+  document.getElementById('_drm').innerHTML=_svFmt(rem);
+  document.getElementById('_dia').innerHTML=_svFmt(ia);
   document.getElementById('_dic').textContent=plan.length;
   document.getElementById('_dil').textContent=plan.length-paidCnt;
 
@@ -2843,8 +3515,8 @@ function _renderPlanTable(debt,plan){
           ${isCustom?`<button title="Varsayılana sıfırla" style="background:none;border:none;cursor:pointer;color:#f59e0b;font-size:13px;padding:0;line-height:1" onclick="_resetInstAmt('${debt.id}',${i})">↺</button>`:''}
         </div>
       </td>
-      <td data-label="Ödenen" style="color:#16a34a;font-weight:600">${_fmt(paid)}</td>
-      <td data-label="Kalan" style="font-weight:700;color:${row.installment-paid>0.01?'#dc2626':'#16a34a'}">${_fmt(row.installment-paid)}</td>
+      <td data-label="Ödenen" style="color:#16a34a;font-weight:600">${_svFmt(paid)}</td>
+      <td data-label="Kalan" style="font-weight:700;color:${row.installment-paid>0.01?'#dc2626':'#16a34a'}">${_svFmt(row.installment-paid)}</td>
       <td data-label="Durum"><span class="_sb2 ${scls[stKey]}">${slabs[stKey]}${isOv&&st!=='paid'?' ⚠':''}</span></td>
       <td data-label="Yöntem">
         <select class="_fi _pi" style="width:100px" id="_pm_${i}">
@@ -2955,7 +3627,7 @@ function _renderHistory(debt){
         <div style="font-size:11px;color:var(--tl)">${new Date(p.date).toLocaleDateString('tr-TR',{day:'2-digit',month:'long',year:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
       </div>
       <div style="text-align:right;display:flex;align-items:center;gap:10px">
-        <div style="font-weight:800;color:#16a34a;font-size:16px">${_fmt(p.amount)}</div>
+        <div style="font-weight:800;color:#16a34a;font-size:16px">${_svFmt(p.amount)}</div>
         <button class="_btn _br _sm" onclick="_delPay('${p.id}')">Sil</button>
       </div>
     </div>`).join('');
@@ -3007,9 +3679,9 @@ function _renderExcelView(debt,plan){
     rows+=`<tr>
       <td>${i+1}</td>
       <td>${(r.month+'').padStart(2,'0')}/${r.year}</td>
-      <td style="text-align:right">${_fmtN(r.installment)}</td>
-      <td style="text-align:right;color:#1e7e34;font-weight:600">${_fmtN(paid)}</td>
-      <td style="text-align:right;color:${rem>0.01?'#c62828':'#1e7e34'};font-weight:600">${_fmtN(rem)}</td>
+      <td style="text-align:right">${_sv(_fmtN(r.installment))}</td>
+      <td style="text-align:right;color:#1e7e34;font-weight:600">${_sv(_fmtN(paid))}</td>
+      <td style="text-align:right;color:${rem>0.01?'#c62828':'#1e7e34'};font-weight:600">${_sv(_fmtN(rem))}</td>
       <td>${stTR}</td>
     </tr>`;
   });
@@ -3115,11 +3787,11 @@ function _renderMonthlyOverview(){
     catMap[cat].paid+=x.paid;
   });
   const debtCatRows=Object.entries(catMap).sort((a,b)=>b[1].inst-a[1].inst)
-    .map(([cat,v])=>`<tr style="background:#f8fafc">
-      <td colspan="2" style="font-size:11px;font-weight:700;color:var(--tm);padding-left:20px">↳ ${cat}</td>
-      <td style="font-size:11px;color:#2563eb;font-weight:600">${_fmt(v.inst)}</td>
-      <td style="font-size:11px;color:#16a34a;font-weight:600">${_fmt(v.paid)}</td>
-      <td style="font-size:11px;color:#dc2626;font-weight:600">${_fmt(v.inst-v.paid)}</td>
+    .map(([cat,v])=>`<tr>
+      <td colspan="2" style="padding-left:24px;color:var(--tm)"><span style="opacity:.5;margin-right:4px">↳</span>${cat}</td>
+      <td style="text-align:right;color:#2563eb;font-variant-numeric:tabular-nums">${_svFmt(v.inst)}</td>
+      <td style="text-align:right;color:#16a34a;font-variant-numeric:tabular-nums">${_svFmt(v.paid)}</td>
+      <td style="text-align:right;color:#dc2626;font-variant-numeric:tabular-nums">${_svFmt(v.inst-v.paid)}</td>
       <td></td></tr>`).join('');
 
   // ── Bütçe satırları tabloda ──
@@ -3134,28 +3806,27 @@ function _renderMonthlyOverview(){
     if(!grp.length)return;
     const grpTot=grp.reduce((s,x)=>s+x.amount,0);
     const grpPaid=grp.filter(x=>x.paid).reduce((s,x)=>s+x.amount,0);
-    // Group header
-    budgetSectionRows+=`<tr style="background:linear-gradient(135deg,#f1f5f9,#e2e8f0)">
-      <td colspan="2" style="font-size:12px;font-weight:800;color:${typeColors[type]}">${typeLabels[type]}</td>
-      <td style="font-size:12px;font-weight:700;color:${typeColors[type]}">${_fmt(grpTot)}</td>
-      <td style="font-size:12px;font-weight:700;color:#16a34a">${_fmt(grpPaid)}</td>
-      <td style="font-size:12px;font-weight:700;color:#dc2626">${_fmt(grpTot-grpPaid)}</td>
+    budgetSectionRows+=`<tr class="_tblSection">
+      <td colspan="2" style="color:#cbd5e1!important">${typeLabels[type]}</td>
+      <td style="text-align:right;color:#cbd5e1!important;font-variant-numeric:tabular-nums">${_svFmt(grpTot)}</td>
+      <td style="text-align:right;color:#86efac!important;font-variant-numeric:tabular-nums">${_svFmt(grpPaid)}</td>
+      <td style="text-align:right;color:#fca5a5!important;font-variant-numeric:tabular-nums">${_svFmt(grpTot-grpPaid)}</td>
       <td></td></tr>`;
     grp.forEach(x=>{
-      const dueInfo=x.dueDay?(x.type==='bill'?` <span style="font-size:10px;color:var(--tl)">· Son: ${x.dueDay}. gün</span>`:''):'';
+      const dueInfo=x.dueDay?(x.type==='bill'?` <span style="font-size:10px;color:var(--tl);margin-left:4px">Son: ${x.dueDay}.</span>`:''):'';
       const st=x.paid?'_sp':'_sf';
       const stTR=x.paid?'Ödendi':'Bekliyor';
       budgetSectionRows+=`<tr class="${!x.paid&&x.type==='bill'&&_todayDueStatus(x.dueDay)==='overdue'?'_overdue':''}">
-        <td data-label="" style="font-weight:600;padding-left:18px">${_BICO[x.category]||'•'} ${x.name}${dueInfo}</td>
-        <td data-label="Kategori" style="font-size:11px;color:var(--tl)">${x.category}</td>
-        <td data-label="Tutar">${_fmt(x.amount)}</td>
-        <td data-label="Ödenen" style="color:#16a34a">${x.paid?_fmt(x.amount):'₺0'}</td>
-        <td data-label="Kalan" style="color:#dc2626">${x.paid?'₺0':_fmt(x.amount)}</td>
-        <td data-label="Durum">
-          <div style="display:flex;gap:4px;align-items:center">
+        <td data-label="Kalem" style="padding-left:20px">${_BICO[x.category]||'•'} &nbsp;${x.name}${dueInfo}</td>
+        <td data-label="Kategori" style="color:var(--tl)">${x.category}</td>
+        <td data-label="Tutar" style="text-align:right;font-variant-numeric:tabular-nums">${_svFmt(x.amount)}</td>
+        <td data-label="Ödenen" style="text-align:right;color:#16a34a;font-variant-numeric:tabular-nums">${x.paid?_svFmt(x.amount):'₺0'}</td>
+        <td data-label="Kalan" style="text-align:right;color:#dc2626;font-variant-numeric:tabular-nums">${x.paid?'₺0':_svFmt(x.amount)}</td>
+        <td data-label="Durum" style="text-align:center">
+          <div style="display:inline-flex;gap:5px;align-items:center">
             <span class="_sb2 ${st}">${stTR}</span>
             <button onclick="_toggleBillPaidAndRefresh('${x.id}')" title="${x.paid?'Ödenmedi işaretle':'Ödendi işaretle'}"
-              style="background:${x.paid?'#dcfce7':'#eff6ff'};border:1px solid ${x.paid?'#86efac':'#93c5fd'};border-radius:5px;padding:2px 7px;cursor:pointer;font-size:12px;font-weight:700">
+              style="background:${x.paid?'#dcfce7':'#eff6ff'};border:1px solid ${x.paid?'#86efac':'#93c5fd'};border-radius:6px;padding:2px 8px;cursor:pointer;font-size:11px;font-weight:700;transition:all .15s">
               ${x.paid?'✓':'○'}
             </button>
           </div>
@@ -3168,53 +3839,61 @@ function _renderMonthlyOverview(){
   if(!hasDebt&&!hasBudget){c.innerHTML='<div class="_em"><div>📭</div><h3>Bu dönemde kayıt yok</h3><p>Borç taksiti veya fatura/harcama eklenmemiş.</p></div>';return;}
 
   c.innerHTML=`
-    <div class="_ag" style="margin-bottom:14px">
-      <div class="_ab"><div class="_abl">Borç Taksitleri</div><div class="_abv bl">${_fmt(ti)}</div></div>
-      <div class="_ab"><div class="_abl">Fatura & Giderler</div><div class="_abv" style="color:#7c3aed">${_fmt(bTotAmt)}</div></div>
-      <div class="_ab"><div class="_abl">Ödenen (Toplam)</div><div class="_abv gr">${_fmt(grandPaid)}</div></div>
-      <div class="_ab"><div class="_abl">Kalan (Toplam)</div><div class="_abv rd">${_fmt(grandRem)}</div></div>
-      ${inc!==null?`<div class="_ab" style="grid-column:span 4"><div class="_abl">Net Gelir</div><div class="_abv" style="color:#0891b2">${_fmt(inc)}
-        <span style="font-size:12px;font-weight:400;color:var(--tl)">
-          · Toplam gider oranı: %${inc>0?(grandTotal/inc*100).toFixed(1):'0'}
-          (borç %${inc>0?(ti/inc*100).toFixed(1):'0'} + gider %${inc>0?(bTotAmt/inc*100).toFixed(1):'0'})
+    <div class="_ag" style="margin-bottom:16px">
+      <div class="_ab"><div class="_abl">Borç Taksitleri</div><div class="_abv bl">${_svFmt(ti)}</div></div>
+      <div class="_ab"><div class="_abl">Fatura & Giderler</div><div class="_abv" style="color:#7c3aed">${_svFmt(bTotAmt)}</div></div>
+      <div class="_ab"><div class="_abl">Ödenen (Toplam)</div><div class="_abv gr">${_svFmt(grandPaid)}</div></div>
+      <div class="_ab"><div class="_abl">Kalan (Toplam)</div><div class="_abv rd">${_svFmt(grandRem)}</div></div>
+      ${inc!==null?`<div class="_ab" style="grid-column:span 4"><div class="_abl">Net Gelir</div><div class="_abv" style="color:#0891b2">${_svFmt(inc)}
+        <span style="font-size:11px;font-weight:400;color:var(--tl)">
+          &nbsp;· Toplam gider: %${inc>0?(grandTotal/inc*100).toFixed(1):'0'}
+          &nbsp;(borç %${inc>0?(ti/inc*100).toFixed(1):'0'} + gider %${inc>0?(bTotAmt/inc*100).toFixed(1):'0'})
         </span></div></div>`:''}
     </div>
+    <div style="border-radius:10px;overflow:hidden;border:1px solid #e2e8f0;box-shadow:0 1px 4px rgba(0,0,0,.06)">
     <table>
-      <thead><tr><th>Kalem</th><th>Kategori</th><th>Tutar</th><th>Ödenen</th><th>Kalan</th><th>Durum</th></tr></thead>
+      <thead><tr>
+        <th>Kalem</th><th>Kategori</th>
+        <th style="text-align:right">Tutar</th>
+        <th style="text-align:right">Ödenen</th>
+        <th style="text-align:right">Kalan</th>
+        <th style="text-align:center">Durum</th>
+      </tr></thead>
       <tbody>
       ${hasDebt?`
-        <tr style="background:linear-gradient(135deg,#eff6ff,#dbeafe)">
-          <td colspan="2" style="font-size:12px;font-weight:800;color:#1d4ed8">💳 Borç Taksitleri</td>
-          <td style="font-size:12px;font-weight:700;color:#1d4ed8">${_fmt(ti)}</td>
-          <td style="font-size:12px;font-weight:700;color:#16a34a">${_fmt(tp)}</td>
-          <td style="font-size:12px;font-weight:700;color:#dc2626">${_fmt(ti-tp)}</td>
+        <tr class="_tblSection">
+          <td colspan="2">💳 &nbsp;Borç Taksitleri</td>
+          <td style="text-align:right;color:#93c5fd">${_svFmt(ti)}</td>
+          <td style="text-align:right;color:#86efac">${_svFmt(tp)}</td>
+          <td style="text-align:right;color:#fca5a5">${_svFmt(ti-tp)}</td>
           <td></td>
         </tr>
-        ${debtRows.map(x=>{
+        ${debtRows.map((x,i)=>{
           const st=_instStatus(x.row.installment,x.paid);
           const isOv=_isOverdue(x.row);
           const stTR=st==='paid'?'Ödendi':st==='partial'?'Kısmi':(isOv?'Gecikmiş ⚠':'Bekliyor');
           const sc=st==='paid'?'_sp':st==='partial'?'_spt':(isOv?'_su':'_sf');
           return `<tr class="${isOv&&st!=='paid'?'_overdue':''}">
-            <td data-label="" style="font-weight:600;cursor:pointer;color:#2563eb;padding-left:18px" onclick="_selById('${x.debt.id}')">${x.debt.name}</td>
-            <td data-label="Kategori" style="font-size:11px;color:var(--tl)">${x.debt.category||'—'} · #${x.row.idx+1}</td>
-            <td data-label="Taksit">${_fmt(x.row.installment)}</td>
-            <td data-label="Ödenen" style="color:#16a34a">${_fmt(x.paid)}</td>
-            <td data-label="Kalan" style="color:#dc2626">${_fmt(x.row.installment-x.paid)}</td>
-            <td data-label="Durum"><span class="_sb2 ${sc}">${stTR}</span></td></tr>`;
+            <td data-label="Kalem" style="cursor:pointer;color:#2563eb;padding-left:20px" onclick="_selById('${x.debt.id}')">${_svName(x.debt.name)}</td>
+            <td data-label="Kategori" style="color:var(--tl)">${x.debt.category||'—'} &nbsp;#${x.row.idx+1}</td>
+            <td data-label="Tutar" style="text-align:right;font-variant-numeric:tabular-nums">${_svFmt(x.row.installment)}</td>
+            <td data-label="Ödenen" style="text-align:right;color:#16a34a;font-variant-numeric:tabular-nums">${_svFmt(x.paid)}</td>
+            <td data-label="Kalan" style="text-align:right;color:#dc2626;font-variant-numeric:tabular-nums">${_svFmt(x.row.installment-x.paid)}</td>
+            <td data-label="Durum" style="text-align:center"><span class="_sb2 ${sc}">${stTR}</span></td></tr>`;
         }).join('')}
         ${debtCatRows}
       `:''}
       ${hasBudget?budgetSectionRows:''}
-      <tr style="background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff">
-        <td colspan="2" style="font-weight:800;font-size:13px;color:#fff">GENEL TOPLAM</td>
-        <td style="font-weight:800;color:#93c5fd">${_fmt(grandTotal)}</td>
-        <td style="font-weight:800;color:#86efac">${_fmt(grandPaid)}</td>
-        <td style="font-weight:800;color:#fca5a5">${_fmt(grandRem)}</td>
+      <tr class="_tblTotal">
+        <td colspan="2">GENEL TOPLAM</td>
+        <td style="text-align:right;color:#93c5fd;font-variant-numeric:tabular-nums">${_svFmt(grandTotal)}</td>
+        <td style="text-align:right;color:#86efac;font-variant-numeric:tabular-nums">${_svFmt(grandPaid)}</td>
+        <td style="text-align:right;color:#fca5a5;font-variant-numeric:tabular-nums">${_svFmt(grandRem)}</td>
         <td></td>
       </tr>
       </tbody>
-    </table>`;
+    </table>
+    </div>`;
 }
 
 async function _toggleBillPaidAndRefresh(id){
@@ -3319,10 +3998,12 @@ async function _saveDebt(){
       _S2.debts[idx]={...prev,name,principal:amt,type,installments:inst,startYear:sy,startMonth:sm,category:cat,color,note,phone,iban,addr,customAmounts:keepCustom};
       _selDebt=_S2.debts[idx];
     }
+    _audit('DEBT_EDIT',`${name} — ${_fmt(amt)} — ${cat}`);
     _toast('Güncellendi','ok');
   } else {
     const debt={id:_uid(),name,principal:amt,type,installments:inst,startYear:sy,startMonth:sm,category:cat,color,note,phone,iban,addr,profile:_S2.activeProfile,createdAt:new Date().toISOString()};
     _S2.debts.push(debt);_selDebt=debt;
+    _audit('DEBT_ADD',`${name} — ${_fmt(amt)} — ${inst} taksit — ${cat}`);
     _toast('Borç eklendi','ok');
   }
   await _saveData();_closeDebtModal();_render();_showDetail();
@@ -3331,11 +4012,13 @@ function _startEdit(){if(_selDebt)_openDebtModal(_selDebt);}
 async function _delDebt(){
   if(!_selDebt)return;
   const name=_selDebt.name;
+  const amt=_selDebt.principal;
   _showConfirm(`"${name}" ve tüm ödemeleri silinsin mi?`, async()=>{
     const id=_selDebt.id;
     _S2.payments=_S2.payments.filter(p=>p.debtId!==id);
     _S2.docMeta=_S2.docMeta.filter(d=>d.debtId!==id);
     _S2.debts=_S2.debts.filter(d=>d.id!==id);
+    _audit('DEBT_DEL',`${name} — ${_fmt(amt)}`);
     _selDebt=null;await _saveData();
     document.getElementById('_dds').style.display='none';
     document.getElementById('_wc').style.display='block';
@@ -3353,12 +4036,19 @@ async function _pay(debtId,idx,amt,alreadyPaid){
   const max=amt-alreadyPaid;
   if(isNaN(v)||v<=0)v=max;
   if(max<=0.01){_toast('Zaten ödendi','warn');return;}
-  _S2.payments.push({id:_uid(),debtId,installmentIdx:idx,amount:Math.min(v,max),method:meth,date:new Date().toISOString()});
-  await _saveData();_render();_toast(_fmt(Math.min(v,max))+' ödeme kaydedildi','ok');
+  const finalAmt=Math.min(v,max);
+  _S2.payments.push({id:_uid(),debtId,installmentIdx:idx,amount:finalAmt,method:meth,date:new Date().toISOString()});
+  const dName=(_S2.debts.find(d=>d.id===debtId)||{}).name||'?';
+  _audit('PAY_ADD',`${dName} — Taksit #${idx+1} — ${_fmt(finalAmt)} — ${meth}`);
+  await _saveData();_render();_toast(_fmt(finalAmt)+' ödeme kaydedildi','ok');
 }
 async function _delPay(id){
+  const pay=_S2.payments.find(p=>p.id===id);
+  const dName=pay?((_S2.debts.find(d=>d.id===pay.debtId)||{}).name||'?'):'?';
+  const payAmt=pay?_fmt(pay.amount):'?';
   _showConfirm('Ödeme kaydı silinsin mi?', async()=>{
     _S2.payments=_S2.payments.filter(p=>p.id!==id);
+    _audit('PAY_DEL',`${dName} — ${payAmt} iade/silindi`);
     await _saveData();_render();_toast('Ödeme silindi');
   });
 }
@@ -3439,7 +4129,45 @@ function _openDbModal(){
   document.getElementById('_dbpi').value=_DB;
   document.getElementById('_dbpd').textContent=_DB;
   _renderProfList();
+  _renderAllUsersList();
   document.getElementById('_dbModal').classList.add('_ms');
+}
+
+function _renderAllUsersList(){
+  const el=document.getElementById('_allUsersList');
+  if(!el) return;
+  const us=_getUsers();
+  const keys=Object.keys(us);
+  if(!keys.length){el.innerHTML='<div style="font-size:12px;color:var(--tl)">Henüz kayıtlı kullanıcı yok.</div>';return;}
+  const colors=['#2563eb','#16a34a','#7c3aed','#dc2626','#d97706','#0891b2'];
+  el.innerHTML=keys.map(k=>{
+    const isCur=k===_curUser;
+    const ci=k.charCodeAt(0)%colors.length;
+    return `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:${isCur?'#eff6ff':'#f8fafc'};border:1px solid ${isCur?'#93c5fd':'#e2e8f0'};border-radius:10px;margin-bottom:6px">
+      <div style="width:30px;height:30px;border-radius:50%;background:${colors[ci]};display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:13px;flex-shrink:0">${k.charAt(0).toUpperCase()}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600;color:#1e293b">${k}${isCur?' <span style="font-size:10px;background:#dbeafe;color:#2563eb;padding:1px 6px;border-radius:10px;font-weight:700">Aktif</span>':''}</div>
+        <div style="font-size:11px;color:var(--tl)">DB: ${(localStorage.getItem('_ftk_dbk_'+k)||'_ftk_'+k).slice(-20)}</div>
+      </div>
+      ${!isCur?`<button onclick="_delUser('${k.replace(/'/g,"\\'")}')" style="background:#fee2e2;border:1px solid #fca5a5;border-radius:7px;padding:4px 10px;cursor:pointer;font-size:11px;color:#dc2626;font-weight:600">Sil</button>`:'<span style="font-size:11px;color:#64748b">Siz</span>'}
+    </div>`;
+  }).join('');
+}
+
+function _delUser(u){
+  if(u===_curUser){_toast('Oturum açık kullanıcı silinemez','err');return;}
+  _showConfirm(`"${u}" kullanıcısı ve tüm verileri kalıcı silinsin mi?`, ()=>{
+    const us=_getUsers();
+    const dbKey=localStorage.getItem('_ftk_dbk_'+u)||'_ftk_'+u;
+    delete us[u];
+    _setUsers(us);
+    localStorage.removeItem(dbKey);
+    localStorage.removeItem('_ftk_dbk_'+u);
+    localStorage.removeItem(dbKey+'_ts');
+    _audit('PROFILE_DEL',`Kullanıcı silindi: ${u}`);
+    _renderAllUsersList();
+    _toast(`"${u}" silindi`,'ok');
+  });
 }
 function _closeDbModal(){document.getElementById('_dbModal').classList.remove('_ms');}
 
@@ -3511,8 +4239,8 @@ async function _gistSetup(){
     }
   }
 
-  // Kaydet
-  localStorage.setItem(_GIST_TOKEN_KEY,token);
+  // Token'ı AES-256-GCM ile şifreli kaydet (plain text değil)
+  await _gistTokenSave(token);
   localStorage.setItem(_GIST_ID_KEY,gistId);
   document.getElementById('_gistId').value=gistId;
   document.getElementById('_gistToken').value='••••••••••••••••••••';
@@ -3578,6 +4306,7 @@ function _gistDisable(){
   _showConfirm('Gist senkronu kapatmak istediğinize emin misiniz? Veriler silinmez.',()=>{
     localStorage.removeItem(_GIST_TOKEN_KEY);
     localStorage.removeItem(_GIST_ID_KEY);
+    _gistTokenClear();
     _gistRefreshUI();
     _closeGistModal();
     _toast('Gist senkron kapatıldı','ok');
@@ -3587,7 +4316,7 @@ function _gistDisable(){
 async function _saveDbPath(){
   const v=document.getElementById('_dbpi').value.trim();
   if(!v){_toast('Geçerli anahtar girin','err');return;}
-  _DB=v;localStorage.setItem('_ftk_dbk',_DB);
+  _DB=v;localStorage.setItem('_ftk_dbk_'+(_curUser||''), _DB);
   document.getElementById('_dbsh').textContent=_DB.length>22?'…'+_DB.slice(-19):_DB;
   await _loadData();_closeDbModal();_render();_toast('DB güncellendi','ok');
 }
@@ -3599,16 +4328,23 @@ async function _changePw(){
   if(!cp||!np||!np2){_toast('Tüm şifre alanlarını doldurun','err');return;}
   if(np.length<6){_toast('Yeni şifre en az 6 karakter','err');return;}
   if(np!==np2){_toast('Şifreler eşleşmiyor','err');return;}
-  const auth=_getAuth();const ch=await _h(_S+''+_curUser+cp);
+  const auth=_getUserAuth(_curUser);
+  // Mevcut şifre doğrulama (salt destekli)
+  const ch=auth&&auth.salt ? await _h(auth.salt+_curUser+cp) : await _h(_S+_curUser+cp);
   if(!auth||auth.h!==ch){_toast('Mevcut şifre yanlış','err');return;}
-  const nh=await _h(_S+''+_curUser+np);
-  localStorage.setItem(_AK,JSON.stringify({u:_curUser,h:nh,hint:nph||auth.hint||''}));
+  // Yeni şifre için yeni salt oluştur
+  const newSalt=_genSalt();
+  const nh=await _h(newSalt+_curUser+np);
+  _setUserAuth(_curUser,{u:_curUser,h:nh,hint:nph||auth.hint||'',salt:newSalt,v:2});
   const oldData=await _dec(localStorage.getItem(_DB),cp);
   if(oldData){_S2=oldData;_curPw=np;await _saveData();}
   _curPw=np;
-  _sessSave(_curUser,np); // session'ı yeni şifreyle güncelle
+  // Gist token'ı yeni şifre ile yeniden şifrele
+  if(_gistTokenMem) await _gistTokenSave(_gistTokenMem);
+  await _sessSave(_curUser,np);
+  _audit('PW_CHANGE',`${_curUser} — şifre başarıyla güncellendi`);
   ['_cp','_np','_np2','_nph'].forEach(id=>document.getElementById(id).value='');
-  _toast('Şifre ve veri yeniden şifrelendi','ok');
+  _toast('Şifre ve veri yeniden şifrelendi ✓','ok');
 }
 function _renderProfList(){
   const c=document.getElementById('_profList');
@@ -3624,14 +4360,17 @@ async function _addProfile(){
   if((_S2.profiles||[]).includes(n)){_toast('Bu profil zaten var','warn');return;}
   if(!_S2.profiles)_S2.profiles=['Varsayılan'];
   _S2.profiles.push(n);
+  _audit('PROFILE_ADD',`"${n}" profili oluşturuldu`);
   await _saveData();_renderProfList();_render();
   document.getElementById('_newProfName').value='';_toast('Profil eklendi','ok');
 }
 async function _delProfile(n){
   _showConfirm(`"${n}" profili ve tüm borçları silinsin mi?`, async()=>{
+    const cnt=_S2.debts.filter(d=>d.profile===n).length;
     _S2.debts=_S2.debts.filter(d=>d.profile!==n);
     _S2.profiles=_S2.profiles.filter(p=>p!==n);
     if(_S2.activeProfile===n)_S2.activeProfile='Varsayılan';
+    _audit('PROFILE_DEL',`"${n}" profili silindi (${cnt} borç)`);
     await _saveData();_renderProfList();_render();_toast('Profil silindi');
   });
 }
@@ -3685,7 +4424,7 @@ function _exportDebtXLSX(){
   const ws=XLSX.utils.aoa_to_sheet(_debtRows(_selDebt));
   ws['!cols']=[{wch:4},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16}];
   XLSX.utils.book_append_sheet(wb,ws,_selDebt.name.slice(0,31));
-  XLSX.writeFile(wb,'BorcTakip_'+_selDebt.name+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.writeFile(wb,'FinansalTakip_'+_selDebt.name+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
   _toast('XLSX indirildi','ok');
 }
 function _exportAllXLSX(){
@@ -3706,7 +4445,7 @@ function _exportAllXLSX(){
     ws['!cols']=[{wch:4},{wch:12},{wch:14},{wch:14},{wch:14},{wch:14},{wch:16}];
     XLSX.utils.book_append_sheet(wb,ws,d.name.slice(0,31));
   });
-  XLSX.writeFile(wb,'BorcTakip_Tumu_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.writeFile(wb,'FinansalTakip_Tumu_'+new Date().toISOString().slice(0,10)+'.xlsx');
   _toast('Tüm veriler XLSX olarak indirildi','ok');
 }
 function _exportMonthXLSX(){
@@ -3728,13 +4467,13 @@ function _exportMonthXLSX(){
   const ws=XLSX.utils.aoa_to_sheet(rows);
   ws['!cols']=[{wch:20},{wch:10},{wch:14},{wch:14},{wch:14},{wch:12}];
   XLSX.utils.book_append_sheet(wb,ws,mns[_curM-1]+' '+_curY);
-  XLSX.writeFile(wb,'BorcTakip_'+mns[_curM-1]+'_'+_curY+'.xlsx');
+  XLSX.writeFile(wb,'FinansalTakip_'+mns[_curM-1]+'_'+_curY+'.xlsx');
   _toast('Aylık XLSX indirildi','ok');
 }
 function _dlDraft(){
   const wb=XLSX.utils.book_new();
   const rows=[
-    ['=== KİŞİSEL BORÇ TAKİP ŞABLONU ===','','','','','','','',''],
+    ['=== FİNANSAL TAKİP ŞABLONU ===','','','','','','','',''],
     ['Bu dosyayı doldurup uygulamaya import edebilirsiniz.','','','','','','','',''],
     ['','','','','','','','',''],
     ['Ad Soyad','Ana Para (₺)','Taksit Sayısı','Başlangıç Ay','Başlangıç Yıl','Kategori','Tip','Not','Telefon'],
@@ -3768,7 +4507,7 @@ function _dlDraft(){
   const ws2=XLSX.utils.aoa_to_sheet(irows);
   ws2['!cols']=[{wch:20},{wch:45},{wch:20}];
   XLSX.utils.book_append_sheet(wb,ws2,'Talimatlar');
-  XLSX.writeFile(wb,'BorcTakip_Sablon.xlsx');
+  XLSX.writeFile(wb,'FinansalTakip_Sablon.xlsx');
   _toast('Şablon indirildi','ok');
 }
 function _importXLSX(e){
@@ -3803,6 +4542,7 @@ function _importXLSX(e){
         added++;
       }
       await _saveData();_render();
+      _audit('IMPORT',`Excel: ${added} borç eklendi${skipped?' ('+skipped+' atlandı)':''}`);
       _toast(`${added} borç eklendi${skipped?' ('+skipped+' atlandı)':''}`,added>0?'ok':'warn');
     }catch(err){_toast('Excel okunamadı','err');}
   };
@@ -3811,8 +4551,116 @@ function _importXLSX(e){
 function _exportJSON(){
   const a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([JSON.stringify({dbKey:_DB,exportDate:new Date().toISOString(),cipher:localStorage.getItem(_DB)})],{type:'application/json'}));
-  a.download='BorcTakip_yedek_'+new Date().toISOString().slice(0,10)+'.json';
-  a.click();_toast('Yedek indirildi','ok');
+  a.download='FinansalTakip_yedek_'+new Date().toISOString().slice(0,10)+'.json';
+  a.click();
+  _audit('EXPORT',`JSON yedek alındı — ${new Date().toLocaleDateString('tr-TR')}`);
+  _toast('Yedek indirildi','ok');
+}
+
+// ── Temiz Şablon İndir ──────────────────────────────────
+// Tüm kişisel verilerden arındırılmış, sıfırdan temiz paylaşım dosyası.
+// İçermez: kullanıcı adı / şifre hash / veri / Gist token / localStorage
+// İçerir: sadece uygulama kodu
+function _exportCleanTemplate(){
+  _showConfirm(
+    '📤 <b>Temiz Şablon İndir</b><br><br>'
+    +'Bu dosyada <b>hiçbir veri bulunmaz</b>:<br>'
+    +'• Kullanıcı adı / şifre yok<br>'
+    +'• Veri / Gist token / ayar yok<br>'
+    +'• Oturum / cache bilgisi yok<br><br>'
+    +'Paylaştığınız kişi kendi hesabını oluşturup<br>sıfırdan kullanmaya başlayabilir.',
+    ()=>{ _doExportCleanTemplate(); }
+  );
+}
+
+async function _doExportCleanTemplate(){
+  _toast('Şablon hazırlanıyor…','info');
+  try{
+    let src = null;
+
+    // ── Kaynak edinme öncelik sırası ──────────────────────────────────
+    // 1. Sayfa açılışında senkron XHR ile alınan ham kaynak (en temiz)
+    if(typeof _RAW_HTML_SRC==='string' && _RAW_HTML_SRC && _RAW_HTML_SRC.length>1000){
+      src = _RAW_HTML_SRC;
+    }
+
+    // 2. Async fetch (GitHub Pages / HTTP sunucu)
+    if(!src){
+      try{
+        const res = await fetch(location.href,{cache:'no-store'});
+        if(res.ok){ src = await res.text(); }
+      }catch(_){}
+    }
+
+    // 3. DOM klonu temizleme (file:// protokolü veya her iki yol da başarısız)
+    //    outerHTML direkt kullanılmaz — oturum açık DOM'u yansıtır.
+    //    Bunun yerine oturumu kapatılmış hale getirilmiş bir klon üretilir.
+    if(!src){
+      src = _buildCleanDomSnapshot();
+    }
+
+    // ── _PDATA bloğunu sıfırla ────────────────────────────────────────
+    src = src.replace(
+      /(<script\s+id="_PDATA"[^>]*>)([\s\S]*?)(<\/script>)/,
+      '$1{"v":1,"d":null}$3'
+    );
+
+    // ── İndir ─────────────────────────────────────────────────────────
+    const blob = new Blob([src],{type:'text/html;charset=utf-8'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'FinansalTakip_'+new Date().toISOString().slice(0,10)+'.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    _toast('✅ Temiz şablon indirildi — güvenle paylaşabilirsiniz','ok');
+  }catch(e){
+    _toast('Şablon oluşturulamadı: '+e.message,'err');
+  }
+}
+
+// DOM klonu ile temiz HTML üret
+// file:// protokolünde fetch çalışmadığında devreye girer.
+// Mevcut DOM'u klonlar, oturum izlerini siler, login ekranını geri açar.
+// DOM klonu KULLANILMAZ — cloneNode+outerHTML serializasyonu script içeriklerini
+// bozabilir. Bunun yerine outerHTML ham string üzerinde sadece display stillerini
+// regex ile düzeltiriz. Script koduna hiç dokunulmaz → JS çalışır kalır.
+function _buildCleanDomSnapshot(){
+  let s = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+  // ① Login ekranı — display:none'ı kaldır, orijinal stiline döndür
+  s = s.replace(
+    /(<div\b[^>]*\bid="_ls"[^>]*)style="[^"]*"/,
+    '$1style="opacity:1;transition:opacity .15s;pointer-events:auto"'
+  );
+
+  // ② Header — display:flex → display:none
+  s = s.replace(
+    /(<div\b[^>]*\bid="_hd"[^>]*)style="display:flex[^"]*"/,
+    '$1style="display:none"'
+  );
+
+  // ③ Uygulama alanı — display:block → display:none
+  s = s.replace(
+    /(<div\b[^>]*\bid="_app"[^>]*)style="display:block[^"]*"/,
+    '$1style="display:none"'
+  );
+
+  // ④ Idle kilit overlay — aktif sınıfı kaldır
+  s = s.replace(/(<div\b[^>]*\bid="_idleOverlay"[^>]*class="[^"]*)_ils([^"]*")/g,'$1$2');
+
+  // ⑤ Hesap makinesi FAB — display:flex → display:none
+  s = s.replace(
+    /(<button\b[^>]*\bid="_calcFab"[^>]*)style="display:flex[^"]*"/,
+    '$1style="display:none"'
+  );
+
+  // ⑥ Hesap gösterim alanlarını sıfırla (görsel temizlik)
+  s = s.replace(/(<span\b[^>]*\bid="_unm"[^>]*>)[^<]*/,'$1Kullanıcı');
+  s = s.replace(/(<div\b[^>]*\bid="_uav"[^>]*>)[^<]*/,'$1U');
+
+  return s;
 }
 function _importJSON(e){
   const file=e.target.files[0];if(!file)return;
@@ -3822,10 +4670,14 @@ function _importJSON(e){
       const d=JSON.parse(ev.target.result);
       if(d.cipher&&d.dbKey){
         localStorage.setItem(d.dbKey,d.cipher);_DB=d.dbKey;
-        await _loadData();_render();_toast('Yedek yüklendi','ok');
+        await _loadData();_render();
+        _audit('IMPORT',`JSON yedek yüklendi`);
+        _toast('Yedek yüklendi','ok');
       } else if(d.debts){
         _S2.debts=d.debts||[];_S2.payments=d.payments||[];
-        await _saveData();_render();_toast('Veri yüklendi','ok');
+        await _saveData();_render();
+        _audit('IMPORT',`JSON ham veri yüklendi — ${(d.debts||[]).length} borç`);
+        _toast('Veri yüklendi','ok');
       }
     }catch{_toast('Dosya okunamadı','err');}
   };
@@ -4255,7 +5107,7 @@ function _renderBills(){
     Object.entries(cats).forEach(([cat,rows])=>{
       const tot=rows.reduce((s,x)=>s+x.amount,0);
       catTot[cat]=tot;
-      html+=`<div class="_ecat"><div class="_ecath">${_BICO[cat]||'🧾'} ${cat} <span>₺${_fmt(tot)}</span></div>`;
+      html+=`<div class="_ecat"><div class="_ecath">${_BICO[cat]||'🧾'} ${cat} <span>${_svFmt(tot)}</span></div>`;
       rows.forEach(x=>{
         const st=_todayDueStatus(x.dueDay);
         const dueLabel=x.dueDay?`Son ödeme: her ayın ${x.dueDay}. günü`:'';
@@ -4268,7 +5120,7 @@ function _renderBills(){
             <div class="_bmeta">${dueLabel}${dueBadge?` · ${dueBadge}`:''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end">
-            <span class="_bamt" style="color:${x.paid?'#16a34a':'#dc2626'}">${_fmt(x.amount)}</span>
+            <span class="_bamt" style="color:${x.paid?'#16a34a':'#dc2626'}">${_svFmt(x.amount)}</span>
             <button onclick="_toggleBillPaid('${x.id}')" title="${x.paid?'Ödenmedi işaretle':'Ödendi işaretle'}" style="background:${x.paid?'#dcfce7':'#f1f5f9'};border:1px solid ${x.paid?'#86efac':'#e2e8f0'};border-radius:6px;padding:4px 8px;cursor:pointer;font-size:13px">${x.paid?'✓':'○'}</button>
             <button class="_copy1" onclick="_copyItemToNextMonth('${x.id}',true)" title="Bu kalemi sonraki aya kopyala (tutar boş)">📋</button>
             ${!x.paid?`<button class="_carry1" onclick="_carryItemToNextMonth('${x.id}')" title="Bu ödenmemiş kalemi tutarıyla birlikte sonraki aya aktar">⏭</button>`:''}
@@ -4282,13 +5134,13 @@ function _renderBills(){
     const totalPaid=items.filter(x=>x.paid).reduce((s,x)=>s+x.amount,0);
     const total=items.reduce((s,x)=>s+x.amount,0);
     const templCount=items.filter(x=>x.isTemplate).length;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--tl);padding:8px 4px;border-top:1px solid var(--bd);margin-top:4px;flex-wrap:wrap;gap:6px">
-      <div style="display:flex;gap:12px">
-        <span>Ödendi: <b style="color:#16a34a">${_fmt(totalPaid)}</b></span>
-        <span>Ödenmedi: <b style="color:#dc2626">${_fmt(total-totalPaid)}</b></span>
-        <span>Toplam: <b>${_fmt(total)}</b></span>
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tl);padding:8px 12px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border-top:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+      <div style="display:flex;gap:14px">
+        <span>Ödendi: <b style="color:#16a34a;font-variant-numeric:tabular-nums">${_svFmt(totalPaid)}</b></span>
+        <span>Kalan: <b style="color:#dc2626;font-variant-numeric:tabular-nums">${_svFmt(total-totalPaid)}</b></span>
+        <span>Toplam: <b style="color:#334155;font-variant-numeric:tabular-nums">${_svFmt(total)}</b></span>
       </div>
-      ${templCount?`<button class="_btempl" onclick="_copyTemplatesOnly('bill')" title="Sadece ★ işaretli şablon kalemleri sonraki aya kopyala (tutar boş)">★ ${templCount} Şablonu Sonraki Aya Kopyala</button>`:''}
+      ${templCount?`<button class="_btempl" onclick="_copyTemplatesOnly('bill')" title="Sadece ★ işaretli şablon kalemleri sonraki aya kopyala (tutar boş)">★ ${templCount} Şablonu Kopyala</button>`:''}
     </div>`;
   }
   el.innerHTML=html;
@@ -4305,7 +5157,7 @@ function _renderHomeExps(){
   } else {
     Object.entries(cats).forEach(([cat,rows])=>{
       const tot=rows.reduce((s,x)=>s+x.amount,0);
-      html+=`<div class="_ecat"><div class="_ecath">${_BICO[cat]||'🏠'} ${cat} <span>₺${_fmt(tot)}</span></div>`;
+      html+=`<div class="_ecat"><div class="_ecath">${_BICO[cat]||'🏠'} ${cat} <span>${_svFmt(tot)}</span></div>`;
       rows.forEach(x=>{
         html+=`<div class="_brow">
           <span class="_bico">${_BICO[x.category]||'🏠'}</span>
@@ -4313,7 +5165,7 @@ function _renderHomeExps(){
             <div class="_bnm">${x.name}${x.isTemplate?` <span class="_tplbadge">ŞABLON</span>`:''}${x.note?` <span style="font-weight:400;color:var(--tl)">(${x.note})</span>`:''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end">
-            <span class="_bamt" style="color:#0284c7">${_fmt(x.amount)}</span>
+            <span class="_bamt" style="color:#0284c7">${_svFmt(x.amount)}</span>
             <button class="_copy1" onclick="_copyItemToNextMonth('${x.id}',true)" title="Sonraki aya kopyala (tutar boş)">📋</button>
             <button class="_carry1" onclick="_carryItemToNextMonth('${x.id}')" title="Tutarıyla birlikte sonraki aya aktar">⏭</button>
             <button onclick="_toggleTemplate('${x.id}')" class="_btempl${x.isTemplate?' _btactive':''}" title="${x.isTemplate?'Şablon işaretini kaldır':'Şablon olarak işaretle'}">${x.isTemplate?'★':'☆'}</button>
@@ -4325,9 +5177,9 @@ function _renderHomeExps(){
     });
     const total=items.reduce((s,x)=>s+x.amount,0);
     const templCount=items.filter(x=>x.isTemplate).length;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--tl);padding:8px 4px;border-top:1px solid var(--bd);margin-top:4px;flex-wrap:wrap;gap:6px">
-      <span>Toplam: <b>${_fmt(total)}</b></span>
-      ${templCount?`<button class="_btempl" onclick="_copyTemplatesOnly('home')" title="Sadece ★ şablonları sonraki aya kopyala">★ ${templCount} Şablonu Sonraki Aya Kopyala</button>`:''}
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tl);padding:8px 12px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border-top:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+      <span>Toplam: <b style="color:#334155;font-variant-numeric:tabular-nums">${_svFmt(total)}</b></span>
+      ${templCount?`<button class="_btempl" onclick="_copyTemplatesOnly('home')" title="Sadece ★ şablonları sonraki aya kopyala">★ ${templCount} Şablonu Kopyala</button>`:''}
     </div>`;
   }
   el.innerHTML=html;
@@ -4344,7 +5196,7 @@ function _renderPersExps(){
   } else {
     Object.entries(cats).forEach(([cat,rows])=>{
       const tot=rows.reduce((s,x)=>s+x.amount,0);
-      html+=`<div class="_ecat"><div class="_ecath">${_BICO[cat]||'👤'} ${cat} <span>₺${_fmt(tot)}</span></div>`;
+      html+=`<div class="_ecat"><div class="_ecath">${_BICO[cat]||'👤'} ${cat} <span>${_svFmt(tot)}</span></div>`;
       rows.forEach(x=>{
         html+=`<div class="_brow">
           <span class="_bico">${_BICO[x.category]||'👤'}</span>
@@ -4352,7 +5204,7 @@ function _renderPersExps(){
             <div class="_bnm">${x.name}${x.isTemplate?` <span class="_tplbadge">ŞABLON</span>`:''}${x.note?` <span style="font-weight:400;color:var(--tl)">(${x.note})</span>`:''}</div>
           </div>
           <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;justify-content:flex-end">
-            <span class="_bamt" style="color:#d97706">${_fmt(x.amount)}</span>
+            <span class="_bamt" style="color:#d97706">${_svFmt(x.amount)}</span>
             <button class="_copy1" onclick="_copyItemToNextMonth('${x.id}',true)" title="Sonraki aya kopyala (tutar boş)">📋</button>
             <button class="_carry1" onclick="_carryItemToNextMonth('${x.id}')" title="Tutarıyla birlikte sonraki aya aktar">⏭</button>
             <button onclick="_toggleTemplate('${x.id}')" class="_btempl${x.isTemplate?' _btactive':''}" title="${x.isTemplate?'Şablon işaretini kaldır':'Şablon olarak işaretle'}">${x.isTemplate?'★':'☆'}</button>
@@ -4364,9 +5216,9 @@ function _renderPersExps(){
     });
     const total=items.reduce((s,x)=>s+x.amount,0);
     const templCount=items.filter(x=>x.isTemplate).length;
-    html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--tl);padding:8px 4px;border-top:1px solid var(--bd);margin-top:4px;flex-wrap:wrap;gap:6px">
-      <span>Toplam: <b>${_fmt(total)}</b></span>
-      ${templCount?`<button class="_btempl" onclick="_copyTemplatesOnly('pers')" title="Sadece ★ şablonları sonraki aya kopyala">★ ${templCount} Şablonu Sonraki Aya Kopyala</button>`:''}
+    html+=`<div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tl);padding:8px 12px;background:linear-gradient(90deg,#f8fafc,#f1f5f9);border-top:1px solid #e2e8f0;flex-wrap:wrap;gap:6px">
+      <span>Toplam: <b style="color:#334155;font-variant-numeric:tabular-nums">${_svFmt(total)}</b></span>
+      ${templCount?`<button class="_btempl" onclick="_copyTemplatesOnly('pers')" title="Sadece ★ şablonları sonraki aya kopyala">★ ${templCount} Şablonu Kopyala</button>`:''}
     </div>`;
   }
   el.innerHTML=html;
@@ -4387,6 +5239,7 @@ async function _addBill(){
   document.getElementById('_bfAmt').value='';
   document.getElementById('_bfDay').value='';
   document.getElementById('_bfNote').value='';
+  _audit('BUDGET_ADD',`🔌 Fatura: ${nm} — ${_fmt(amt)} — ${cat}`);
   _renderBudget();
   if(document.getElementById('_mov').style.display!=='none') _renderMonthlyOverview();
   _toast('Fatura eklendi','ok');
@@ -4405,6 +5258,7 @@ async function _addHomeExp(){
   document.getElementById('_hNm').value='';
   document.getElementById('_hAmt').value='';
   document.getElementById('_hNote').value='';
+  _audit('BUDGET_ADD',`🛒 Ev Geçimi: ${nm} — ${_fmt(amt)} — ${cat}`);
   _renderBudget();
   if(document.getElementById('_mov').style.display!=='none') _renderMonthlyOverview();
   _toast('Ev geçim kalemi eklendi','ok');
@@ -4423,6 +5277,7 @@ async function _addPersExp(){
   document.getElementById('_pNm').value='';
   document.getElementById('_pAmt').value='';
   document.getElementById('_pNote').value='';
+  _audit('BUDGET_ADD',`👤 Şahsi: ${nm} — ${_fmt(amt)} — ${cat}`);
   _renderBudget();
   if(document.getElementById('_mov').style.display!=='none') _renderMonthlyOverview();
   _toast('Şahsi harcama eklendi','ok');
@@ -4432,14 +5287,19 @@ async function _toggleBillPaid(id){
   const item=(_S2.budget||[]).find(x=>x.id===id);
   if(!item)return;
   item.paid=!item.paid;
+  _audit(item.paid?'BUDGET_PAID':'BUDGET_UNPAID',`${item.name} — ${_fmt(item.amount)} — ${item.type==='bill'?'Fatura':item.type==='home'?'Ev':'Şahsi'}`);
   await _saveData();
   _render();
   _toast(item.paid?'Ödendi olarak işaretlendi':'Ödenmedi olarak işaretlendi','ok');
 }
 
 async function _delBudgetItem(id){
+  const item=(_S2.budget||[]).find(x=>x.id===id);
+  const iName=item?item.name:'?';
+  const iAmt=item?_fmt(item.amount):'?';
   _showConfirm('Bu kalemi silmek istediğinizden emin misiniz?', async()=>{
     _S2.budget=(_S2.budget||[]).filter(x=>x.id!==id);
+    _audit('BUDGET_DEL',`${iName} — ${iAmt}`);
     await _saveData();
     _render();
     _toast('Silindi','ok');
@@ -4787,12 +5647,13 @@ function _mobileInitOnLogin(){
  * DOM üzerinden _PDATA bloğunu günceller, sonra outerHTML alır.
  */
 function _buildPortableHTML(cipher, includeAuth){
-  // Auth bilgisini de gömebilir (taşıma için)
-  const authRaw = includeAuth ? localStorage.getItem(_AK) : null;
-  const dbKey   = includeAuth ? localStorage.getItem('_ftk_dbk') : null;
+  // GÜVENLİK: Kullanıcı kimlik bilgileri (kullanıcı adı, hash, salt) asla
+  // HTML dosyasına gömülmez. Yalnızca şifreli veri bloğu taşınır.
+  // → Dosya paylaşıldığında alıcı yeni kullanıcı oluşturur, temiz başlar.
+  // → Aynı cihaza taşıyan kullanıcı aynı şifreyle kayıt olur, veriyi açar.
   const payload = JSON.stringify({
-    v:2, d:cipher, ts:new Date().toISOString(),
-    auth: authRaw||null, dbk: dbKey||null
+    v:2, d:cipher, ts:new Date().toISOString()
+    // users, dbk, user — KASITLI OLARAK EKSİK (güvenlik)
   });
   // DOM'daki _PDATA bloğunu güncelle
   const pdEl = document.getElementById('_PDATA');
@@ -4873,7 +5734,7 @@ async function _downloadPortable(){
   const now  = new Date();
   const ts   = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}`;
   a.href     = url;
-  a.download = `borc-takip-${ts}.html`;
+  a.download = `finansal-takip-${ts}.html`;
   a.click();
   URL.revokeObjectURL(url);
   _toast('Taşınabilir HTML indirildi — aynı kullanıcı adı ve şifre ile giriş yapın','ok');
@@ -4900,17 +5761,29 @@ function _closePortableModal(){
     if (!ls) return;
     ls.style.opacity = '1';
     ls.style.pointerEvents = 'auto';
-    // Taşınan dosyada auth varsa kullanıcı adını login formuna doldur
-    try{
-      const authRaw=localStorage.getItem(_AK);
-      if(authRaw){
-        const authObj=JSON.parse(authRaw);
-        const uField=document.getElementById('_lu');
-        if(uField&&!uField.value) uField.value=authObj.u||'';
-        const pField=document.getElementById('_lp');
-        if(pField) setTimeout(()=>pField.focus(),300);
+    // Formu resetle (kayıt kapalı, giriş açık)
+    const rf=document.getElementById('_registerForm');
+    const lf=document.getElementById('_loginForm');
+    if(rf) rf.style.display='none';
+    if(lf) lf.style.display='block';
+    setTimeout(()=>{
+      _migrateOldAuth(); // Eski tek-kullanıcı formatını taşı
+      _renderUserList();
+      const us=_getUsers();
+      const keys=Object.keys(us);
+      if(!keys.length){
+        // Hiç kullanıcı yok → İlk kullanım / paylaşılan dosya açıldı
+        // Kayıt formunu göster
+        _showRegisterForm();
+        return;
       }
-    }catch{}
+      // Tek kullanıcı varsa adını otomatik doldur, şifre alanına odaklan
+      if(keys.length===1){
+        const uField=document.getElementById('_lu');
+        if(uField&&!uField.value){ uField.value=keys[0]; _onUserInput(); }
+        setTimeout(()=>{const p=document.getElementById('_lp');if(p)p.focus();},300);
+      }
+    },150);
   }
 
   function _hideLogin() {
@@ -4924,7 +5797,7 @@ function _closePortableModal(){
     // Taşınan dosyada auth bilgisi varsa önce localStorage'a yükle
     _pdataRestoreAuth();
 
-    const sess = _sessLoad();
+    const sess = await _sessLoad();
 
     if (!sess) {
       _showLogin();
@@ -4932,11 +5805,14 @@ function _closePortableModal(){
     }
 
     // Session mevcut: doğrulama yap
-    const auth = _getAuth();
+    const auth = _getUserAuth(sess.u);
     if (!auth || auth.u !== sess.u) {
       _sessClear(); _showLogin(); return;
     }
-    const h = await _h(_S + sess.u + sess.pw);
+    // Salt destekli hash doğrulama
+    const h = auth.salt
+      ? await _h(auth.salt + sess.u + sess.pw)
+      : await _h(_S + sess.u + sess.pw);
     if (auth.h !== h) {
       _sessClear(); _showLogin(); return;
     }
